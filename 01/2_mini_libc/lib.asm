@@ -23,16 +23,31 @@ exit:
 write:
   ; -------
   ; TODO: Add your implementation here
-  ud2 ; will crash the program, remove it
+  ;ud2 ; will crash the program, remove it
+  MOV EAX, 0x4; Typ des System Calls auf "Schreiben" festlegen
+  MOV EBX, [ESP+0x8]; 1. Argument nach EBX laden
+  MOV ECX, [ESP+0xC]; 2. Argument nach ECX laden
+  MOV EDX, [ESP+0x10]; 3. Argument nach EDX laden
+  INT 0x80; System Call ausführen
+  MOV ESP, EBP; Schiebe den Stack-Pointer zurück
+  POP EBP 
+
 
   ; -------
-  ret
+  ret 
 
 ; size_t read(int fd, void* buf, size_t count);
 read:
   ; -------
   ; TODO: Add your implementation here
-  ud2 ; will crash the program, remove it
+  ;ud2 ; will crash the program, remove it
+  MOV EAX, 0x3; Typ des System Calls auf "Lesen" festlegen
+  MOV EBX, [ESP+0x8]; 1. Argument nach EBX laden
+  MOV ECX, [ESP+0xC]; 2. Argument nach ECX laden
+  MOV EDX, [ESP+0x10]; 3. Argument nach EDX laden
+  INT 0x80; System Call ausführen
+  MOV ESP, EBP; Schiebe den Stack-Pointer zurück
+  POP EBP 
 
   ; -------
   ret
@@ -65,9 +80,21 @@ strlen:
   mov ebp, esp
   push ebx  ; callee-saved register, must be restored before return
   ; -------
+  ; EBX ist 1. Argument, nämlich char* s, welches auf den Stack gepusht wird
   ; TODO: Add your implementation of strlen here
-  ud2 ; will crash the program, remove it
+  ;ud2 ; will crash the program, remove it
 
+    MOV EAX, [EBP + 8]  ;Zeiger auf das 1. Argument
+    XOR ECX, ECX        ;Zähler auf 0 setzen 
+
+  .iterate_through_string:
+    CMP BYTE [EAX+ECX], 0x0; Prüfe, ob es der \0 String-Terminator war
+    JE .finalize_strlen; Falls ja: Verlasse die Schleife
+    INC ECX; Inkrementiere die Ausgabe um 1
+    JMP .iterate_through_string; Falls am Stack Pointer kein \0 String-Terminator war, wiederhole am nächsten Zeichen
+  
+  .finalize_strlen:
+  MOV EAX, ECX; Ausgabe des Ergebnisses der Zählung
   ; -------
   pop ebx
   mov esp, ebp

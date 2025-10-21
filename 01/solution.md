@@ -76,3 +76,53 @@ Daraus folgt, dass alle Assembly-Instruktionen nach der Adresse 0x0804901d (s. A
 Linux System-Calls werden dann ausgeführt, wenn im Assembler-Code INT 0x80 ausgeführt wird. In diesem Moment werden die Werte aus allen Registern gelesen. Der Wert von EAX definiert die Art der Aktion nach System Call-Tabelle (z. B. Programm starten/beenden, Datei schreiben/lesen/löschen) und die Werte der anderen Register (EBX, ECX, EDX, ESI, EDI) definieren die Argumente, die übergeben werden. Der Rückgabewert wird nach dem System Call in das Register EAX geschrieben.
 
 
+## 2.1 Finden Sie heraus, wie auf x86 Parameter übergeben werden (cdecl Calling Conventions) und wie die Funktion read auf die übergebenen Parameter zugreifen kann:
+Die Register und der Stack sind am Breakpoint `read`wie folgt belegt:
+```sh
+pwndbg> regs
+ EAX  0xffffd1ac ◂— 0x0
+ EBX  0x0
+ ECX  0x0
+ EDX  0xffffd1ac ◂— 0x0
+ EDI  0x0
+ ESI  0x0
+ EBP  0xffffd1ec ◂— 0x0
+ ESP  0xffffd190 —▸ 0x804904e (_start+78) ◂— xor    eax, eax
+ EIP  0x804909e (read) ◂— ud2    
+pwndbg> stack
+00:0000│ esp     0xffffd190 —▸ 0x804904e (_start+78) ◂— xor    eax, eax
+01:0004│         0xffffd194 ◂— 0x0
+02:0008│         0xffffd198 —▸ 0xffffd1ac ◂— 0x0
+03:000c│         0xffffd19c ◂— 0x30 /* '0' */
+04:0010│         0xffffd1a0 ◂— 0x0
+... ↓            3 skipped
+pwndbg> 
+```
+
+Die cdecl-Calling Convention besagt, dass die Funktionsargumente zunächst auf den Stack gepusht werden, bevor die Funktion aufgerufen wird. Die Funktion ruft die Werte vom Stack ab und danach wird die Funktion ausgeführt. Die Rückgabe wird am Ende in EAX geschrieben, und der Stack-Pointer wird wieder über die abgelegten Funktionsargumente geschoben.
+
+## 2.2 Implementieren Sie die Funktionen read und write in der Datei lib.asm. Diese sollen sich äquivalent zu den Standard-C-Funktionen verhalten. Implementieren Sie die Funktionen als einfache Wrapper um die entsprechenden Linux x86 System Calls. Im Gegensatz zu den Standard C Funktionen müssen Sie kein Error-Handling implementieren.
+s. `./2_mini_libc/lib.asm`
+
+## 2.3 Wie werden Schleifen auf Assemblerebene implementiert? Analysieren Sie die memset Funktion und beschreiben Sie, wie die Schleife implementiert wurde. Nutzen Sie dafür auch die Graphansicht von Cutter.
+Die Schleife in `memset` besteht aus 3 Teilen `memset_loop_check`, `memset_loop_body` und `memset_loop_end`:
+```asm
+;-- _memset_loop_check:
+0x080490d4      cmp     ecx, dword [arg_ch]
+0x080490d7      je      _memset_loop_end
+;-- _memset_loop_body:
+0x080490d9      mov     byte [edx + ecx], al
+0x080490dc      inc     ecx
+0x080490dd      jmp     _memset_loop_check
+;-- _memset_loop_end:
+0x080490df      mov     eax, dword [arg_4h]
+0x080490e2      mov     esp, ebp
+0x080490e4      pop     ebp
+0x080490e5      ret
+```
+(Graph in `./loc_memset_graph.png`)
+
+Zu Beginn wird `memset_loop_check` eine Subroutine zur Prüfung der Abbruchbedingung durchgeführt. Ist die Abbruchbedingung erfüllt, wird zum Ende der Schleife bei `memset_loop_end` gesprungen, wo die Subroutine verlassen wird. Ist die Abbruchbedingung noch nicht erfüllt, wird der Schleifenkörper in `memset_loop_end` ausgeführt. Am Ende des Schleifenkörpers wird durch Sprung nach `memset_loop_check` erneut die Abbruchbedingung geprüft.
+
+## 2.4 C-Strings werden als char* dargestellt, also ein Pointer auf einen char (1 Byte). Erklären Sie, wie ein C-String im Speicher aussieht und wie die Länge eines C-Strings festgestellt werden kann. Implementieren Sie die strlen Funktion, welche die Länge eines C-Strings berechnet, in der Datei lib.asm Testen Sie die Implementierung mit make test. Die Implementierung muss alle der mitgelieferten Tests bestehen.
+
