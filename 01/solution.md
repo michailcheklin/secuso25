@@ -1,7 +1,7 @@
 # 1 Hello World-Assembler-Programm
 
 ## 1.1 Disassemblieren Sie die Routine _start in hello-x86 und erklären Sie kurz jede Instruktion.
-
+```sh
 pwndbg> disassemble /r _start
 Dump of assembler code for function _start:
    0x08049000 <+0>:	    b8 04 00 00 00      mov    eax,0x4
@@ -43,7 +43,7 @@ Dump of assembler code for function _start:
    0x0804902c <+44>:	00                  .byte 0x0
     Hier wird das Byte 0x00 als fester Wert definiert (evtl. String-Terminator).
 End of assembler dump.
-
+```
 ## 1.2 Debuggen Sie das Programm hello-x86 mit dem Debugger gdb und bestimmen Sie die tatsächlichen Werte und Adressen in den Registern jeweils bevor die int 0x80 Instruktion ausgeführt wird. Erklären Sie die Bedeutung der verschiedenen Register.
 
 Kurz vor dem ersten System Call (INT 0x80) sind die Register lt. `gdb` wie folgt belegt:
