@@ -126,3 +126,7 @@ Zu Beginn wird `memset_loop_check` eine Subroutine zur Prüfung der Abbruchbedin
 
 ## 2.4 C-Strings werden als char* dargestellt, also ein Pointer auf einen char (1 Byte). Erklären Sie, wie ein C-String im Speicher aussieht und wie die Länge eines C-Strings festgestellt werden kann. Implementieren Sie die strlen Funktion, welche die Länge eines C-Strings berechnet, in der Datei lib.asm Testen Sie die Implementierung mit make test. Die Implementierung muss alle der mitgelieferten Tests bestehen.
 Im Speicher werden die Bytes des C-Strings gespeichert, wobei das Ende des Strings mit einem 0x00-Byte, dem String-Terminator markiert wird. Die Länge des Strings wird festgestellt, indem man ausgehend von der Speicheradresse des Strings die Anzahl der Bytes zählt, bis das nächste 0x00-Byte auftritt.
+
+## 3.1 Erklären Sie, wie auf x86 64-Bit Parameter übergeben werden (cdecl Calling Conventions auf Linux).Erklären Sie auch, wie der Rückgabewert übergeben wird.
+Finden Sie heraus wie viele Parameter an die Funktion explain_me übergeben werden und ob die
+Funktion einen Rückgabewert hat. Beschreiben Sie ihr Vorgehen.
