@@ -3184,6 +3184,7 @@ pdb.extract=1
 pdb.server=https://msdl.microsoft.com/download/symbols
 pdb.symstore=/home/user/.local/share/rizin/pdb
 prj.compress=false
+prj.file=/home/user/Desktop/Secuso/01/3_control_flow_analysis/cfa.rzdb
 rap.loop=true
 rop.comments=false
 rop.conditional=false
