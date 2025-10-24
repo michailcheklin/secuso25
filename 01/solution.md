@@ -127,6 +127,18 @@ Zu Beginn wird `memset_loop_check` eine Subroutine zur Prüfung der Abbruchbedin
 ## 2.4 C-Strings werden als char* dargestellt, also ein Pointer auf einen char (1 Byte). Erklären Sie, wie ein C-String im Speicher aussieht und wie die Länge eines C-Strings festgestellt werden kann. Implementieren Sie die strlen Funktion, welche die Länge eines C-Strings berechnet, in der Datei lib.asm Testen Sie die Implementierung mit make test. Die Implementierung muss alle der mitgelieferten Tests bestehen.
 Im Speicher werden die Bytes des C-Strings gespeichert, wobei das Ende des Strings mit einem 0x00-Byte, dem String-Terminator markiert wird. Die Länge des Strings wird festgestellt, indem man ausgehend von der Speicheradresse des Strings die Anzahl der Bytes zählt, bis das nächste 0x00-Byte auftritt.
 
-## 3.1 Erklären Sie, wie auf x86 64-Bit Parameter übergeben werden (cdecl Calling Conventions auf Linux).Erklären Sie auch, wie der Rückgabewert übergeben wird.
-Finden Sie heraus wie viele Parameter an die Funktion explain_me übergeben werden und ob die
-Funktion einen Rückgabewert hat. Beschreiben Sie ihr Vorgehen.
+## 3.1 Erklären Sie, wie auf x86 64-Bit Parameter übergeben werden (cdecl Calling Conventions auf Linux).Erklären Sie auch, wie der Rückgabewert übergeben wird. Finden Sie heraus wie viele Parameter an die Funktion explain_me übergeben werden und ob die Funktion einen Rückgabewert hat. Beschreiben Sie ihr Vorgehen.
+Bei x86-64 auf Linux werden die Parameter in folgender Reihenfolge über die Register übergeben: RDI, RSI, RDX, RCX, R8, R9 (anstelle wie in x86 EAX, EBX, ECX, EDX, EDI, ESI) (Quelle: https://en.wikipedia.org/wiki/X86_calling_conventions#List_of_x86_calling_conventions). Der Rückgabewert wird in RAX zurückgegeben. Derjenige, der die Funktion aufgerufen hat (Caller) ist verantwortlich für die Behandlung des Stacks. 
+
+Cutter zeigt bei der explain_me-Funktion an, dass nur ein Argument vorliegt, da nur "arg uint64_t arg1 @ rdi" angezeigt wird, aber nichts mehr zu RSI etc. Da bei Adresse 0x40119a etwas nach EAX verschoben wird (die untersten 32 Bits von RAX), liegt ein Rückgabewert vor. 
+
+## 3.2 Erklären Sie kurz die Funktionalität von allen Basic Blocks in der Funktion explain_me im Programm cfa. Nutzen Sie zum Finden der Basic Blocks die Graph-Funktion von Cutter. Fügen Sie in Cutter Kommentare mit der Beschreibung der Basic Blocks ein. (Rechtsklick → Add Comment oder mit ; als Tastaturkürzel)
+Block 0x401140 ist der Eintrittspunkt der Funktion.
+Block 0x40117d behandelt Eingaben kleiner als 2. 
+Block 0x401187 behandelt die Eingabe 0 (oder kleiner).
+Block 0x401193 behandelt die Eingabe 1.
+Block 0x401155 behandelt Eingaben von 2 oder größer. Dort werden die Funktionen mit (Eingabe-1) und (Eingabe-2) erneut aufgerufen. Die beiden Rückgabewerte werden summiert, sobald die beiden Aufrufe beendet sind.
+Am Ende im Block 0x40119a erfolgt die Ausgabe.
+
+Die Funktion, welche berechnet wird, ist die Fibonacci-Folge an der Stelle n.
+
