@@ -50,7 +50,7 @@ Kurz vor dem Crash werden die folgenden Instruktionen ausgeführt:
 0x804940b <main+46>    mov    dword ptr [ebp - 0xc], eax ;Die Adresse, wohin der Funktionspointer zeigt, wird in [EBP-0xC] auf den Stack geladen,
 0x804940e <main+49>    mov    eax, dword ptr [ebp - 0xc]; Die Adresse, wohin der Funktionspointer zeigt, wird aus dem Stack nach EAX geladen.
 0x8049411 <main+52>    mov    dword ptr [eax], fail         <0x8049267>; Die Adresse der fail-Funktion wird an die Adresse geschrieben, die dem aktuellen Wert von EAX entspricht. 
-► 0x8049417 <main+58>    sub    esp, 0xc; Ab da kam der Crash
+► 0x8049417 <main+58>    sub    esp, 0xc; Ab da kam der Crash, weil der Pointer von fail auf eine ungültige Adresse zeigt.
 0x804941a <main+61>    push   dword ptr [ebp - 0x10]
 0x804941d <main+64>    call   interact                     <interact>
 
