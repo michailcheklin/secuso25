@@ -68,3 +68,9 @@ Der Input (in Python-Strings ausgedrückt), um den Funktions-Pointer auf success
 word = b"A"*112 + p32(0x08049247)
 length = 117
 Anders als im Input der Aufgabe 2.2 werden die letzten 4 Bytes mit dem DWORD 0x08049247, der Adresse der success-Funktion ersetzt, um den Funktionspointer umzuleiten.
+
+
+## 3.1 Wo befindet sich die Schwachstelle in diesem Programm? Wie können Sie damit die Return-Adresse überschreiben? Wie lang muss der Input sein?
+Die Schwachstelle ist, dass in der vuln()-Funktion 64 Zeichen aus einem 32 Zeichen großen Buffer gelesen werden. Somit werden die Grenzen des 32 Zeichen langen Buffers nicht beachtet.
+
+## 3.2 Erweitern Sie den Shellcode, sodass er eine Betriebssystem-Shell startet. Wie können Sie den Shellcode einschleusen? Ermitteln Sie die Adresse des Shellcode (z.B. mit dem Debugger). An welcher Adresse liegt der eingeschleuste Shellcode? Welche Zeichen darf der Shellcode nicht enthalten?
