@@ -74,3 +74,7 @@ Anders als im Input der Aufgabe 2.2 werden die letzten 4 Bytes mit dem DWORD 0x0
 Die Schwachstelle ist, dass in der vuln()-Funktion 64 Zeichen aus einem 32 Zeichen großen Buffer gelesen werden. Somit werden die Grenzen des 32 Zeichen langen Buffers nicht beachtet.
 
 ## 3.2 Erweitern Sie den Shellcode, sodass er eine Betriebssystem-Shell startet. Wie können Sie den Shellcode einschleusen? Ermitteln Sie die Adresse des Shellcode (z.B. mit dem Debugger). An welcher Adresse liegt der eingeschleuste Shellcode? Welche Zeichen darf der Shellcode nicht enthalten?
+Zunächst wird die Konsoleneingabe, die bei sc86.c, Z. 26 (read(0, shellcode, sizeof(shellcode))) eingelesen wird, auf die Assembler-Bytes des Shellcodes gesetzt. Mit einem Buffer-Overflow wird die Return-Adresse der vuln-Funktion zur Adresse des ersten Bytes des Shell-Codes (in diesem Programm bei 0x804c028) verändert, wodurch statt der Funktion, die die vuln-Funktion aufgerufen hat, nun der Shellcode ausgeführt wird. Der Shellcode darf kein \x00-Byte enthalten, weil das Einlesen des Shellcodes bei sc86.c, Z. 26 sonst beim ersten \x00-Byte aufhören würde.
+
+## 3.3 Überschreiben Sie die Return-Adresse mit der Adresse des Shellcode. Starten Sie damit eine Shell.Erweitern Sie das Exploit Template exploit.py zu einem funktionierenden Exploit. Stellen Sie sicher, dass ihr Exploit auch außerhalb des Debuggers funktionsfähig ist.
+s. exploit.py, die Eingabe lautet (in Python-Syntax ausgedrückt) b"A" * 44 + p32(0x0804c028).
