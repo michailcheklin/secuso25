@@ -78,3 +78,8 @@ Zunächst wird die Konsoleneingabe, die bei sc86.c, Z. 26 (read(0, shellcode, si
 
 ## 3.3 Überschreiben Sie die Return-Adresse mit der Adresse des Shellcode. Starten Sie damit eine Shell.Erweitern Sie das Exploit Template exploit.py zu einem funktionierenden Exploit. Stellen Sie sicher, dass ihr Exploit auch außerhalb des Debuggers funktionsfähig ist.
 s. exploit.py, die Eingabe lautet (in Python-Syntax ausgedrückt) b"A" * 44 + p32(0x0804c028).
+
+## 4.1 Wo befindet sich die Schwachstelle in diesem Programm? Wie können Sie damit die Return-Adresse überschreiben? Wo können Sie Shellcode einschleusen und wie lange kann dieser sein?
+Die Schwachstelle ist in getreal.c in Zeile 55: Dort wird ein 32 Zeichen langer Buffer angelegt, allerdings werden 48 Zeichen vom Benutzer gelesen. Außerdem wird in store_real der eingelesene String nicht mit dem \0-Terminator geschlossen. Der Shellcode kann wie folgt eingeschleust werden: Zuerst werden bis zu 40 Bytes an Assembler-Code als Passworteingabe geschrieben und die Return-Adresse auf den Beginn des Buffers, der nun Shell-Code enthält, gesetzt.
+
+##
