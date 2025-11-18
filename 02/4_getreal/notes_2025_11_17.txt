@@ -1,0 +1,13 @@
+Für Aufgabe 4:
+Buffer wird überbefüllt
+Einschleusen über Passwortbuffer: Max. 16-1 Bytes
+
+Erster Shellcode: kleiner Shellcode, der mit write einen 2. Shellcode einführt
+Sicherstellung, dass ich nicht meinen eigenen Shellcode überschreibe: Stack um 128 verschieben
+
+
+
+Sonst:
+Pwntools-Doku ansehen und schauen, was man automatisieren kann (z. B. Shellcode erstellen, ROP-Ketten erstellen,...)
+Heap-Layout: heap -s
+
