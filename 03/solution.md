@@ -59,62 +59,7 @@ RDI = (Pointer zu some_buffer, um dorthin die Inhalte aus der Datei zu schreiben
 RSI = 0xff (genauso lang wie some_buffer ist)
 RDX = RAX aus der fopen-Funktion = der File Descriptor der soeben geöffneten Datei
 
-Es stehen uns die folgenden Gadgets zur Verfügung:
-```
-    gadget 0:
-    0x004012b4: xor rdi, r9
-    0x004012b7: ret
-    gadget 1:
-    0x004012c2: mov r9, rax
-    0x004012c5: not r9
-    0x004012c8: ret
-    gadget 2:
-    0x004012d3: pop rcx
-    0x004012d4: call rcx
-    0x004012d6: xor rax, rax
-    0x004012d9: mov rax, qword ptr [rax]
-    0x004012dc: ret
-    gadget 3:
-    0x004012e7: mov qword ptr [rdx], r9
-    0x004012ea: ret
-    gadget 4:
-    0x004012f5: pop rcx
-    0x004012f6: call rcx
-    gadget 5:
-    0x00401302: sub rcx, r8
-    0x00401305: mov rsi, rcx
-    0x00401308: ret
-    gadget 6:
-    0x00401313: xor, rdi
-    0x00401316: ret
-    gadget 7:
-    0x00401321: syscall
-    0x00401323: test rax, rax
-    0x00401326: ret
-    gadget 8:
-    0x00401331: pop rcx
-    0x00401332: pop r8
-    0x00401334: ret
-    gadget 9:
-    0x0040133f: pop rdx
-    0x00401340: ret
-    gadget 10:
-    0x0040134b: mov eax, 0
-    0x00401350: ret
-    gadget 11:
-    0x0040135b: mov rdx, qword ptr [rcx]
-    0x0040135e: pop rcx
-    0x0040135f: ret
-    gadget 12:
-    0x0040136a: add rdi, rdx
-    0x0040136d: ret
-    gadget 13:
-    0x00401378: not rdx
-    0x0040137b: ret
-    gadget 14:
-    0x00401386: xor rax, r9
-    0x00401389: ret
-```
 
-In Gadget 10 wird EAX auf 0 gesetzt, in Gadget 6 wird RDI auf 0 gesetzt. Außerdem wird in Gadget 7 RAX geprüft, ob der Wert 0 ist.
-In Gadget 2, 4, 8, 9, 11 können mit POP Werte in Register eingelesen werden: Nach RCX in Gadgets 2, 4 und 8; nach R8 in Gadget 8, nach RCX in Gadget 11 und nach RDX in Gadget 9
+Um RSI zu setzen, wird die folgende ROP-Chain benötigt: Gadget 8 - (Wert für RSI) - 0 - Gadget 5 (einziges Gadget, das RSI modifiziert)
+Um RDI zu setzen, wird die folgende ROP-Chain benötigt: Gadget 9 - (Wert für RDI) - Gadget 6 - Gadget 12
+Um RAX nach RDX zu verschieben, ist es notwendig zu prüfen, welche Gadgets RDX modifizieren. Gadgets 13 und 9 modifizieren RDX direkt, Gadget 3 modifiziert die Adresse, an die RDX zeigt. RAX wird in Gadget 14 modifiziert; in Gadget 10 werden die unteren 32 Bits von RAX auf 0 gesetzt. Da die File Pointer niemals 32 Bits überschreiten, kann dies effektiv als das Rücksetzen von RAX auf 0 gesehen werden. Gadget 7 wird, obwohl EAX beteiligt ist, nicht benötigt, weil TEST RAX, RAX nur Statusflags setzt, die aber in keinem Gadget mit JNZ, JZ, ..., abgefragt werden. 
