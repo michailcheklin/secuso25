@@ -59,7 +59,29 @@ RDI = (Pointer zu some_buffer, um dorthin die Inhalte aus der Datei zu schreiben
 RSI = 0xff (genauso lang wie some_buffer ist)
 RDX = RAX aus der fopen-Funktion = der File Descriptor der soeben geöffneten Datei
 
+Um das Programm sauber zu beenden, muss exit(0) aufgerufen werden. Hierfür muss dieses Register gesetzt sein:
+RDI = 0
 
-Um RSI zu setzen, wird die folgende ROP-Chain benötigt: Gadget 8 - (Wert für RSI) - 0 - Gadget 5 (einziges Gadget, das RSI modifiziert)
-Um RDI zu setzen, wird die folgende ROP-Chain benötigt: Gadget 9 - (Wert für RDI) - Gadget 6 - Gadget 12
-Um RAX nach RDX zu verschieben, ist es notwendig zu prüfen, welche Gadgets RDX modifizieren. Gadgets 13 und 9 modifizieren RDX direkt, Gadget 3 modifiziert die Adresse, an die RDX zeigt. RAX wird in Gadget 14 modifiziert; in Gadget 10 werden die unteren 32 Bits von RAX auf 0 gesetzt. Da die File Pointer niemals 32 Bits überschreiten, kann dies effektiv als das Rücksetzen von RAX auf 0 gesehen werden. Gadget 7 wird, obwohl EAX beteiligt ist, nicht benötigt, weil TEST RAX, RAX nur Statusflags setzt, die aber in keinem Gadget mit JNZ, JZ, ..., abgefragt werden. 
+
+* Um RSI zu setzen, wird die ROP-Chain im Folgenden rückwärts konstruiert:
+  * Das Gadget 5 ist das einzige Gadget, worin RSI beschrieben wird. Dieses erfordert allerdings, dass das Register RCX gesetzt ist. Allerdings wird RCX um den Wert, der in R8 steht, reduziert.
+  * Im Gadget 8 werden sowohl RCX als auch R8 eingelesen. Damit der Wert in RCX, der in Gadget 5 nach RSI kopiert wird, gleich bleibt, muss R8 gleich 0 sein. 
+Somit ist die ROP-Chain, um RSI zu setzen, wie folgt: G8 - (Wert für RSI) - 0 - G5
+
+* Um RDI zu setzen, wird die ROP-Chain im Folgenden rückwärts konstruiert:
+  * RDI wird als Zielregister in den Gadgets 6 und 12 benutzt. Gadget 6 setzt RDI auf 0, weil das Ergebnis der XOR-Verknüpfung zweier gleicher Werte immer 0 beträgt. Somit muss RDI in Gadget 12 über die Addition von RDX und RDI gesetzt werden. 
+  * Da mit Gadget 6 RDI auf 0 gesetzt werden kann, ist es notwendig, dass das RDX-Register auf den später gewünschten Wert für RDI gesetzt wird. Hierfür wird das Gadget 9 verwendet, um den gewünschten konstanten Wert für RDI zu setzen.
+Somit ist die ROP-Chain, um RDI zu setzen, wie folgt: G9 - (Wert für RDI) - G6 - G12
+
+
+* Um RAX nach RDX zu verschieben, ist es notwendig zu prüfen, welche Gadgets RDX modifizieren. Hierfür wird in zwei Teilen vorgegangen. Zuerst wird rückwärts vorgegangen, um zu bestimmen, welche Register als Zwischenschritt gesetzt werden müssen, bevor RDX gesetzt werden kann.
+  * Die Gadgets 13, 11 und 9 modifizieren RDX direkt: Gadget 13 negiert RDX, Gadget 11 nimmt einen Wert aus dem Stack nach RDX und Gadget 9 lädt den Wert an der Speicherstelle, wo RCX hin zeigt, nach RDX. Da Gadget 9 als einziges Gadget aus dem Speicher Werte in RDX lädt, wird dieses Gadget in der ROP-Chain benötigt. Da die Adresse, auf die RCX hinzeigte, bereits nach RDX dereferenziert wurde, kann für POP RCX ein beliebiger Wert vom Stack verwendet werden.
+  * Weil Gadget 11 aus RCX liest und daraus die einzulesende Speicheradresse ableitet, muss RCX gesetzt werden. Hierfür stehen die Gadgets 8, 5 und 2 zur Verfügung. In Gadget 2 wird RAX mit XOR RAX, RAX auf 0 gesetzt, bevor mit MOV RAX, QWORD PTR \[RAX\] die Speicherstelle, auf die RAX zeigt, dereferenziert wird. Gadget 2 scheidet aus, da der NULL-Pointer dereferenziert wird, was immer zu einem Segmentation Fault führt. Gadget 5 scheidet aus, da es als Seiteneffekt das RSI-Register, was zuvor gesetzt wurde, modifiziert. Somit bleibt Gadget 8 übrig, um RCX einzulesen. Da auch R8 eingelesen wird, aber R8 nicht benötigt wird, kann R8 auf einen beliebigen Wert gesetzt werden. Als Wert für RCX wird some_buffer_addr gewählt, da dies ein Symbol eines bekannten, beschreibbaren Datenbereichs (globaler Buffer) ist.
+Nun ist das Teilziel, den Wert aus RAX an den Beginn von some_buffer_addr zu kopieren. Hierfür gehen wir von Anfang an vorwärts vor, bis der Beginn des 1. Teils erreicht ist.
+  * Die Adresse some_buffer_addr wird auch am Anfang gewählt, um den Wert aus RAX zwischenzuspeichern. Gadget 1 ist das einzige Gadget, welches den Wert aus RAX in ein anderes Register oder in einen Speicherbereich schreibt. Deswegen wird ganz am Anfang Gadget 1 genutzt, um den Wert aus RAX zunächst in R9 zwischenzuspeichern. Hierbei werden allerdings nach dem Kopiervorgang in R9 alle Bits negiert. 
+  * R9 wird in den Gadgets 0, 3 und 14 als Quellregister für Kopieroperationen benutzt, wobe  in Gadgets 0 und 14 die Register RAX bzw. RDI mit R9 XOR-verknüpft werden. Dies ist weniger zielführend, weil der Wert aus RAX verloren geht bzw. der bereits gesetzte Wert in RDI zerstört wird. Das Gadget 3 kopiert den Wert aus R9 direkt an die Speicheradresse, wo RDX hinzeigt.
+  * Um dafür zu sorgen, dass das Gadget 3 den Wert aus R9 (negierter RAX-Wert) entspricht, nach some_buffer_addr kopiert, wird vorher als Zwischenschritt mit Gadget 9 RDX auf die Adresse von some_buffer_addr gesetzt.
+Jetzt verknüpfen wir die beiden Teile:
+  * Da der negierte Wert aus RAX nun an some_buffer_addr vorliegt, funktioniert es, dass RCX auf some_buffer_addr gesetzt wird. Somit kann dann durch Gadget 11 der zwischengespeicherte negierte RAX-Wert an der Adresse some_buffer_addr nach RDX geladen werden.
+  * Als letzten Schritt wird Gadget 13 genutzt, um in RDX den negierten Wert von RAX wieder zurückzugenieren.
+Somit ist die ROP-Chain, um MOV RDX, RAX zu simulieren: G1 - G9 - some_buffer_addr - G3 - G8 - some_buffer_addr - (beliebiger Dummy-Wert) - G11 - (beliebiger Dummy-Wert) - G13
