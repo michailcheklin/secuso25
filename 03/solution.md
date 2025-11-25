@@ -100,4 +100,90 @@ MOV RDI, 0 <=> G6
 CALL exit <=> exit_function_addr
 
 ## 3.1 Überschreiben Sie die Return-Adresse zuerst mit dem Wert 0x4141414141414141, um zu demonstrieren, dass Sie den Instruction Pointer übernehmen können. Wo im Programm ist die Schwachstelle? Welchen Input müssen Sie dem Programm schicken? Wie lang ist der Input?
-Im Programm ist die Schwachstelle in Z. 23. Dort werden 512 Zeichen in einen 32 Zeichen langen Buffer eingelesen. Um den Instruction-Pointer zu überschreiben, müssen 56 Bytes eingegeben werden, zzgl. 8 "A"-Bytes, um den Instruction Pointer auf 0x4141414141414141 setzen zu können.
+Im Programm ist die Schwachstelle in Z. 23. Dort werden 512 Zeichen in einen 32 Zeichen langen Buffer eingelesen. Um den Instruction-Pointer zu überschreiben, müssen 64 Bytes eingegeben werden, wovon die letzten 8 Bytes "A"-Bytes sein müssen, um die Return-Adresse auf 0x4141414141414141 setzen zu können.
+
+
+## 3.2 Identifizieren Sie mögliche Gadgets, die Sie für die ROP-Chain nutzen können. Suchen Sie an den im Exploit-Template vorgegebenen Adressen nach möglichen Gadgets. Implementieren Sie dazu einen einfachen ROP-Gadget-Finder. Untersuchen Sie dazu den Assembler Code im Bereich des Symbols gadgets und der Funktion compute (dies ist im exploit.py Template bereits vorgegeben).
+
+Im Bereich des Symbols `gadgets` bis `gadget_end` wurden folgende Gadgets gefunden:
+```
+Gadget 0:
+0x00401166:     48 31 db   xor  rbx,  rbx
+0x00401169:     c3         ret
+Gadget 1:
+0x00401174:     5f   pop        rdi
+0x00401175:     c3   ret
+Gadget 2:
+0x00401180:     5a   pop        rdx
+0x00401181:     c3   ret
+Gadget 3:
+0x0040118c:     48 8b 4c 24 f0   mov    rcx,  qword ptr [rsp - 0x10]
+0x00401191:     c3               ret
+Gadget 4:
+0x0040119c:     41 58   pop     r8
+0x0040119e:     41 59   pop     r9
+0x004011a0:     c3      ret
+Gadget 5:
+0x004011ab:     48 31 c0   xor  rax,  rax
+0x004011ae:     c3         ret
+Gadget 6:
+0x004011b9:     8b 04 25 48 89 c8 00   mov      eax,  dword ptr [0xc88948]
+0x004011c0:     c3                     ret
+Gadget 7:
+0x004011c1:     c3   ret
+Gadget 8:
+0x004011cc:     48 85 c0   test rax,  rax
+0x004011cf:     c3         ret
+Gadget 9:
+0x004011da:     5e   pop        rsi
+0x004011db:     c3   ret
+```
+
+## 3.3 Welche der Gadgets können Sie verwenden, um die benötigten Register für den Systemcall execve zu setzen?
+Um den Syscall für execve zu setzen, müssen die Register wie folgt gesetzt sein:
+RAX = 59
+RDI = Pointer zum Programmnamen "/bin/cat"
+RSI = Pointer zum Dateinamen "./flag.txt", gefolgt von NULL
+RDX = Pointer zu den Umgebungsvariablen (in diesem Fall NULL)
+
+Um RAX zu setzen, kann mit Gadget 6 das Register RAX auf 0 gesetzt werden und in die unteren 32 Bit von RAX der Wert 59  aus der Speicheradresse 0xc88948 geschrieben werden.
+Um RDI zu setzen, kann Gadget 1 direkt verwendet werden. Mit dem vorgegebenen Stack Leak kann relativ dazu der Pointer zu dem String "/bin/cat", der ebenfalls auf dem Stack sein wird, ermittelt werden.
+Um RSI zu setzen, kann Gadget 9 direkt verwendet werden. Mit dem vorgegebenen Stack Leak kann relativ dazu der Pointer zu dem String "./flag.txt", der ebenfalls auf dem Stack sein wird, ermittelt werden.
+Um RDX auf 0 zu setzen, kann Gadget 2 direkt verwendet werden.
+
+## 3.4 Erklären Sie „Unintended Instruction Sequences“ im Kontext von ROP auf x86. Eine solche Sequenz befindet sich unter den gegebenen ROP-Gadgets und enthält ein Gadget, welches Sie für einen erfolgreichen Angriff benötigen. Beschreiben Sie: • Welches Gadget haben Sie gefunden? • Warum ist das gefundene Gadget eine unintended instruction sequence? • Wie haben Sie es gefunden?
+
+In Intel x86-64 kann jedes Byte direkt adressiert werden. Wird der Bytestream nicht vom vorgesehenen Beginn an gelesen, können durch die Byte-Verschiebungen zufällig andere Instruktionen als vorgesehen entstehen. Dies eröffnet mehr Möglichkeiten, ROP-Angriffe durchzuführen, da mehr mögliche Gadgets zur Verfügung stehen und man wahrscheinlicher mit den zusätzlichen Gadgets die Turing-Vollständigkeit erreicht. Liest man auf normale Weise rückwärts von allen RET-Instruktionen und disasssembliert, scheinen Gadget 6 und 7, die hintereinander liegen, zusammen wie folgt auszusehen:
+
+```
+Gadget 6:
+0x004011b9:     8b 04 25 48 89 c8 00   mov      eax,  dword ptr [0xc88948]
+0x004011c0:     c3                     ret
+Gadget 7:
+0x004011c1:     c3   ret
+```
+
+Da eine absolute Speicheradresse gelesen wird, die durch die anderen Gadgets nicht adressiert wird, kam der Verdacht auf, dass eine unintended Instruction Sequence vorliegt. Indem nach und nach von links die Bytes aus Gadget 6 entfernt wurden, wurden die entstehenden Instruktionsfolgen betrachtet. Beginnt man 3 Bytes nach dem scheinbaren Beginn des Gadget 6 zu disassemblieren, entsteht stattdessen diese Instruktionsfolge für Gadget 6 (nun Gadget 6N, N=Neu):
+```
+Gadget 6N:
+0x004011bc:     48 89 c8   mov  rax,  rcx
+0x004011bf:     00 c3      add  bl,  al
+0x004011c1:     c3         ret
+```
+
+Gadget 3, wo auf einen Wert 16 Bytes unter dem Stack-Pointer zugegriffen wird, kann verwendet werden, um das Register RCX zu setzen, um dann in Gadget 6N den Wert aus RCX nach RAX zu übernehmen. Gadget 7 an Adresse 0x4011c1 kann weiterhin als NOP-Gadget verwendet werden, da dieses Gadget nur aus dem Byte für die RET-Instruktion besteht.
+
+
+## 3.5 Finden Sie eine Möglichkeit, um einen Systemcall als Teil Ihres ROP-Angriffes auszuführen. Welche Instruktion(en) bzw. ROP-Gadgets können Sie verwenden, um den Systemcall durchzuführen? Erklären Sie den Assembler Code und den Zweck der Gadgets.
+In x86-64 entspricht die Instruktion `SYSCALL` den Bytes `0f 05`. Da es kein Gadget (inkl. Gadget 6N) gibt, worin ein Syscall ausgeführt wird, muss im .text-Bereich relativ zu einem Funktionssymbol die Byte-Folge `0f 05` gefunden werden. Auch wenn ASLR aktiviert ist, randomisieren sich nur die Startadressen der Funktionen im .text-Bereich, der relative Abstand zwischen Instruktion in einer Funktion zum Funktionsanfang bleibt jedoch gleich. In der Compute-Funktion existiert eine Bytefolge `0f 05` am 45. und 46. Byte innerhalb der Funktion.
+
+## 3.6 Vervollständigen Sie exploit.py zu einem funktionsfähigen Exploit, der mit ROP eine Shell mittels des execve Systemcalls startet.
+Wir benötigen:
+RAX = 59
+RDI = (Ptr -> "/bin/cat")
+RSI = (Ptr -> "flag.txt")
+RDX = 0
+
+RDI kann mit Gadget 1 direkt gesetzt werden, 
+RDX kann mit Gadget 2 direkt gesetzt werden, 
+RSI kann mit Gadget 9 direkt gesetzt werden
