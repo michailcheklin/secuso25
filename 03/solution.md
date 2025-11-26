@@ -142,18 +142,18 @@ Gadget 9:
 ## 3.3 Welche der Gadgets können Sie verwenden, um die benötigten Register für den Systemcall execve zu setzen?
 Um den Syscall für execve zu setzen, müssen die Register wie folgt gesetzt sein:
 RAX = 59
-RDI = Pointer zum Programmnamen "/bin/cat"
-RSI = Pointer zum Dateinamen "./flag.txt", gefolgt von NULL
-RDX = Pointer zu den Umgebungsvariablen (in diesem Fall NULL)
+RDI = Pointer zum Programmnamen 
+RSI = Pointer zu den Argumenten
+RDX = Pointer zu den Umgebungsvariablen 
 
-Um RAX zu setzen, kann mit Gadget 6 das Register RAX auf 0 gesetzt werden und in die unteren 32 Bit von RAX der Wert 59  aus der Speicheradresse 0xc88948 geschrieben werden.
-Um RDI zu setzen, kann Gadget 1 direkt verwendet werden. Mit dem vorgegebenen Stack Leak kann relativ dazu der Pointer zu dem String "/bin/cat", der ebenfalls auf dem Stack sein wird, ermittelt werden.
-Um RSI zu setzen, kann Gadget 9 direkt verwendet werden. Mit dem vorgegebenen Stack Leak kann relativ dazu der Pointer zu dem String "./flag.txt", der ebenfalls auf dem Stack sein wird, ermittelt werden.
-Um RDX auf 0 zu setzen, kann Gadget 2 direkt verwendet werden.
+* Um RAX zu setzen, kann mit Gadget 6 das Register RAX auf 0 gesetzt werden und in die unteren 32 Bit von RAX der Wert 59  aus der Speicheradresse 0xc88948 geschrieben werden.
+* Um RDI zu setzen, kann Gadget 1 direkt verwendet werden.
+* Um RSI zu setzen, kann Gadget 9 direkt verwendet werden. 
+* Um RDX zu setzen, kann Gadget 2 direkt verwendet werden.
 
 ## 3.4 Erklären Sie „Unintended Instruction Sequences“ im Kontext von ROP auf x86. Eine solche Sequenz befindet sich unter den gegebenen ROP-Gadgets und enthält ein Gadget, welches Sie für einen erfolgreichen Angriff benötigen. Beschreiben Sie: • Welches Gadget haben Sie gefunden? • Warum ist das gefundene Gadget eine unintended instruction sequence? • Wie haben Sie es gefunden?
 
-In Intel x86-64 kann jedes Byte direkt adressiert werden. Wird der Bytestream nicht vom vorgesehenen Beginn an gelesen, können durch die Byte-Verschiebungen zufällig andere Instruktionen als vorgesehen entstehen. Dies eröffnet mehr Möglichkeiten, ROP-Angriffe durchzuführen, da mehr mögliche Gadgets zur Verfügung stehen und man wahrscheinlicher mit den zusätzlichen Gadgets die Turing-Vollständigkeit erreicht. Liest man auf normale Weise rückwärts von allen RET-Instruktionen und disasssembliert, scheinen Gadget 6 und 7, die hintereinander liegen, zusammen wie folgt auszusehen:
+In Intel x86-64 kann jedes Byte direkt adressiert werden. Wird der Bytestream nicht vom vorgesehenen Beginn an gelesen, können durch die Byte-Verschiebungen zufällig andere Instruktionen als vorgesehen entstehen. Dies eröffnet mehr Möglichkeiten, ROP-Angriffe durchzuführen, da mehr mögliche Gadgets zur Verfügung stehen und man mit den zusätzlichen Gadgets wahrscheinlicher die Turing-Vollständigkeit erreicht. Liest man auf normale Weise rückwärts von allen RET-Instruktionen und disasssembliert, scheinen Gadget 6 und 7, die im Speicher hintereinander liegen, zusammen wie folgt auszusehen:
 
 ```
 Gadget 6:
@@ -180,10 +180,13 @@ In x86-64 entspricht die Instruktion `SYSCALL` den Bytes `0f 05`. Da es kein Gad
 ## 3.6 Vervollständigen Sie exploit.py zu einem funktionsfähigen Exploit, der mit ROP eine Shell mittels des execve Systemcalls startet.
 Wir benötigen:
 RAX = 59
-RDI = (Ptr -> "/bin/cat")
-RSI = (Ptr -> "flag.txt")
-RDX = 0
+RDI = (Ptr -> "/bin/sh")
+RSI = (Ptr -> {Ptr -> "/bin/sh", NULL})
+RDX = NULL
 
-RDI kann mit Gadget 1 direkt gesetzt werden, 
-RDX kann mit Gadget 2 direkt gesetzt werden, 
-RSI kann mit Gadget 9 direkt gesetzt werden
+* Um RAX zu setzen, kann Gadget 6N verwendet werden, welches den Wert aus RCX in RAX einliest. Um RCX zu setzen, muss über Gadget 3 stackpointer-relativ die Zahl 59 gesetzt werden. Die Zahl 59 wurde kurz vor der ROP-Chain im Buffer-Overflow geschrieben, damit die anderen Register ungestört befüllt werden können.
+* RDI kann über Gadget 1 direkt gesetzt werden. Direkt über dem Gadget wird der Pointer auf "/bin/sh" geschrieben. Die Adresse des Pointers wird relativ zur geleakten Stack-Adresse bestimmt.
+* RSI kann über Gadget 9 direkt gesetzt werden. Direkt über dem Gadget wird der Pointer auf einen Array von Pointern geschrieben. Der Pointer-Array besteht aus dem Pointer zu "/bin/sh" und aus dem NULL-Pointer, welche im Speicher direkt hintereinander liegen müssen. Die Adresse des Pointers zum Pointer-Array wird ebenfalls relativ zur geleakten Stack-Adresse bestimmt.
+* RDX kann über Gadget 2 direkt auf 0 gesetzt werden, da wenn keine Umgebungsvariablen übergeben werden, für RDX der NULL-Pointer übergeben werden muss.
+* Sobald die Register für den Syscall gesetzt sind, wird der Syscall ausgeführt. Da beim execve-Syscall ein neues Programm ausgeführt wird, werden im Gadget 10 die Instruktionen nach dem Syscall nicht mehr ausgeführt.
+* In den höheren Adressen der ROP-Chain befindet sich der Datenbereich. Dort ist der String "/bin/sh" für RDI und der Pointer-Array {Ptr -> "/bin/sh", NULL} für RSI enthalten.
