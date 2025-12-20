@@ -23,3 +23,7 @@ Um dieses Problem zu lösen, wird der doppelte Pointer bei `data->ptr` manipulie
 ## 1.2 Erweitern Sie das Exploit-Template zu einem funktionierenden Exploit. Überschreiben Sie den Poin- ter so, dass das Programm den Inhalt des Strings flag ausgibt.
 Der Payload lautet nach dem in Aufg. 1.1. aufgestellten Plan wie folgt:
 `p64(flag_addr) + (24 Bytes Dummy-Daten) + p64(location_of_pointer_data_ptr_itself-32)`. Die Dummy-Daten dürfen keinesfalls ein \0-Byte oder einen Zeilenumbruch enthalten, weil fgets() sonst vorzeitig aufhört, die Eingabe einzulesen.
+
+
+## 2.1 Finden Sie eine Möglichkeit ASLR zu umgehen. Identifizieren Sie dazu einen Information Leak Bug, mit dem es möglich ist, Adressen auszulesen. Erklären Sie den Bug und wie Sie ihn dazu nutzen können, um die Adressen der Gadgets zu berechnen.
+In der Methode `load_real` (getreal3.c, Z. 77 ff.) wird in den 64 Byte großen Buffer `password` mit `fgets(buf, 640, stdin)` vom Benutzer eine bis zu 640 Byte lange Eingabe eingelesen. Da das Passwort höchstwahrscheinlich falsch sein wird, gelangt das Programm zur Anweisung `printf("ACCESS DENIED: your input:\n%s", buf);` (getreal3.c, Z. 77 ff.). Die `printf()`-Funktion reagiert auf `%s` wie folgt: Es beginnt am Beginn von buf zu lesen, bis ein \0-Byte kommt. Wenn die ersten 64 Bytes kein \0-Byte enthalten, so können weitere Bytes bis zum ersten \0-Byte aus dem Speicher gelesen werden.
