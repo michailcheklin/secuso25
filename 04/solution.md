@@ -42,6 +42,20 @@ In `ld-linux` befindet sich immer 0x39a90 Bytes von dessen Start das Objekt `__l
 
 
 ## 2.2 Identifizieren nützliche ROP-Gadgets z. B. in dem Programm oder der libc. Erklären Sie welche ROP-Gadgets Sie verwendet haben.
+An dem Punkt, wo die Startadressen der Binary, der libc, ld-linux-Bibliotheken und des Stacks geleakt werden konnten, sieht der Speicher wie folgt aus:
+
+```
+
+RBP-0x60: buf[0...15]
+RBP-0x50: buf[16...31]
+RBP-0x40: buf[32...47]
+RBP-0x30: buf[48...63]
+RBP-0x20: (ptr -> stdin) (ptr -> real_main+101, kurz vor explicit_bzero)
+RBP-0x10: p64(0) 
+
+```
+
+
 Da unabhängig von PIE und ASLR die Startadressen der Binary und von libc geleakt werden, steht die gesamte Binary sowie libc zur Findung von Gadgets zur Verfügung. Da DEP/NX auch aktiviert ist, beschränkt sich die Suche von Gadgets auf die ausführbaren Bereiche der Binary und libc:
 * BEGIN_OF_BINARY + 0x1000 bis BEGIN_OF_BINARY + 0x1FFF
 * BEGIN_OF_LIBC + 0x28000 bis BEGIN_OF_LIBC + 0x1BCFFF
