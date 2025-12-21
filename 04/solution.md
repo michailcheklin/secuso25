@@ -28,97 +28,119 @@ Der Payload lautet nach dem in Aufg. 1.1. aufgestellten Plan wie folgt:
 ## 2.1 Finden Sie eine Möglichkeit ASLR zu umgehen. Identifizieren Sie dazu einen Information Leak Bug, mit dem es möglich ist, Adressen auszulesen. Erklären Sie den Bug und wie Sie ihn dazu nutzen können, um die Adressen der Gadgets zu berechnen.
 In der Methode `print_help` (getreal3.c, Z. 38 ff.) wird die Adresse, auf die der Pointer `help` zeigt, als Hexadezimalwert ausgegeben. Zeigt ``help` nicht auf einen der beiden Pointer, die im Array `help_message` liegen, erfolgt statt der Ausgabe des Hilfetextes die Adresse, worauf `help` zeigt. Die Methode `print_help` wird genau dann aufgerufen, wenn nach der Abfrage des gewünschten Befehls (getreal3.c, Z. 95 ff.) weder p noch q noch r eingetippt wurde. 
 
+### Startadresse der Binary leaken
 Wurde hingegen l eingetippt, wird der aktuelle Hilfstext auf `help_message[i]` gesetzt. Da in C keine Arraygrenzenprüfung durchgeführt wird, kann so der Pointer auch auf `help_message[-1]` gesetzt werden, wo sich ein Pointer befindet, der auf sich selbst zeigt und relativ zum Beginn der .data-Section der Binary immer die gleiche Distanz hat. Auch wenn PIE und ASLR aktiviert sind, werden die Abstände zum Beginn der Binary nicht randomisiert, wodurch die Adressen der Symbole durch Nutzung der geleakten Adresse von `help_message[-1]` auch zur Laufzeit berechnet werden können. Somit stehen alle Symbole aus der Binary selbst für mögliche ROP-Angriffe zur Verfügung. 
 
-An den Symbolen wie `got.puts` sind Pointer zu der jeweils entsprechenden Funktion aus libc gespeichert. Da die Symbole in der Binary liegen, können deren Positionen auch berechnet werden. Mit dem Abstand zwischen den Symbolen zu `help_msg` kann, nach Eingabe von l als gewünschten Befehl, der Pointer `help` auf eine beliebige Stelle im Binary gesetzt werden. Die benötigte Zahl ist 1/8 des Abstands zwischen `help_msg`, was ein Array vom Typ `char*` ist, und der gewünschten zu leakenden Stelle der Binary, da die Array-Indizierung `help_msg[i]` von der Adresse her `array[0] + 8*i` ist und Pointer auf x64 immer 8 Bytes groß sind. So kann die Adresse einer libc-Funktion geleakt werden, da jede libc-Funktion relativ zum Beginn von libc bei jeder Ausführung den gleichen Abstand hat.
+### Startadresse von libc leaken
+Mit dem Abstand zwischen den Symbolen aus der Binary zu `help_msg` kann, nach Eingabe von l als gewünschten Befehl, der Pointer `help` auf eine beliebige Stelle im Binary gesetzt werden. Die benötigte Zahl ist 1/8 des Abstands zwischen `help_msg`, was ein Array vom Typ `char*` ist, und der gewünschten zu leakenden Stelle der Binary, da die Array-Indizierung `help_msg[i]` von der Adresse her `array[0] + 8*i` ist und Pointer auf x64 immer 8 Bytes groß sind. In der Binary sind an den Symbolen wie `got.puts` Pointer zu der jeweils namentlich entsprechenden Funktion aus libc gespeichert. So kann die Adresse einer libc-Funktion geleakt werden, und da jede libc-Funktion relativ zum Beginn von libc bei jeder Ausführung den gleichen Abstand hat sind alle Adressen aus libc.
 
-Mit dem Terminal-Befehl `readelf -s --wide /usr/lib/x86_64-linux-gnu/libc.so.6 | grep "FUNC *GLOBAL *DEFAULT" >> libc_function_list.txt` kann die Liste aller libc-Funktionen, die von außerhalb von libc aufgerufen werden können in einer Textdatei gespeichert werden. Die zweite Spalte der so entstandenen Textdatei zeigt als Hexadezimalzahl den Abstand der jeweiligen Funktion zum Beginn von libc an, beispielsweise liegt der Beginn der Funktion `puts` 0x80E50 (dezimal 527952) Bytes nach dem Beginn von libc (s. auch /2_piereal/notes/libc_function_list.txt Z. 998). Mit dem gefundenen Offset lässt sich die Startadresse von libc immer ausrechnen, obwohl PIE und ASLR aktiviert sind.
+Mit dem Terminal-Befehl `readelf -s --wide /usr/lib/x86_64-linux-gnu/libc.so.6 | grep "FUNC *GLOBAL *DEFAULT" >> libc_function_list.txt` kann die Liste aller libc-Funktionen in einer Textdatei gespeichert werden. `FUNC GLOBAL DEFAULT` im Listeneintrag bedeutet, dass die Funktion sicher von außerhalb von libc aufgerufen werden kann; durch den `grep`-Filter werden nur solche Funktionen aufgezählt. Die zweite Spalte der so entstandenen Textdatei zeigt als Hexadezimalzahl den Abstand der jeweiligen Funktion zum Beginn von libc an, beispielsweise liegt der Beginn der Funktion `puts` 0x80E50 (dezimal 527952) Bytes nach dem Beginn von libc (s. auch /2_piereal/notes/libc_function_list.txt Z. 998). Mit dem gefundenen Offset lässt sich die Startadresse von libc immer ausrechnen, obwohl PIE und ASLR aktiviert sind.
 
-Da sich die Startadresse von libc ausrechnen lässt, kann die Adresse jeder Funktion aus libc ausgerechnet werden, darunter auch die Adresse des Objekts `__nptl_rtld_global`, welches immer einen Pointer beinhaltet, der in den Speicherbereich `ld-linux` zeigt. Das Objekt befindet sich immer 0x21b878 Bytes nach dem Start von libc. Mit der Eingabe von l als gewünschten Befehl und danach den errechneten Abstand zwischen `help_msg`und `libc+0x21b878` geteilt durch 8, kann eine Adresse des `ld-linux`-Bereichs geleakt werden. Da diese Adresse immer 0x3a040 Bytes nach dem Beginn von `ld-linux` ist, kann auch die Startadresse von `ld-linux` und somit alle Adressen aus `ld-linux` geleakt werden, obwohl ASLR und PIE aktiviert sind.
+### Startadresse von ld-linux leaken
+Ein zweiter großer Bereich im Prozessspeicher ist `ld-linux`. Dieser Bereich ist dafür verantwortlich, `libc` mit dem ausgeführten Programm zu verbinden. Da sich die Startadresse von libc ausrechnen lässt, kann auch die Adresse des Objekts `__nptl_rtld_global` zur Laufzeit berechnet werden. In diesem Objekt ist immer ein Pointer beinhaltet, der in den Speicherbereich `ld-linux` zeigt, um die Verbindung zwischen `libc` und `ld-linux` herzustellen.  Mit der Eingabe von l als gewünschten Befehl und danach den errechneten Abstand zwischen `help_msg`und `libc+0x21b878` geteilt durch 8, kann eine Adresse des `ld-linux`-Bereichs geleakt werden. Da diese Adresse immer 0x3a040 Bytes nach dem Beginn von `ld-linux` ist, kann trotz aktiviertem ASLR und PIE auch die Startadresse von `ld-linux` und somit alle Adressen aus `ld-linux` geleakt werden.
 
-In `ld-linux` befindet sich immer 0x39a90 Bytes von dessen Start das Objekt `__libc_stack_end` zeigt, was, wie der Name sagt, die Adresse des obersten Elements aller Funktionsstacks enthält. Wird die gleiche Abfolge von Eingaben in die Konsole getätigt, werden immer die gleichen Funktionen nacheinander aufgerufen, wodurch die Struktur des Call-Stacks gleich bleibt. Hierdurch bleibt der Abstand zwischen `__libc_stack_end` und dem Wert des RBP-Registers gleich, wodurch auch RBP immer berechnet werden kann. Somit ist auch der Stack geleakt.
 
+### Stack leaken
+In `ld-linux` befindet sich das Objekt `__libc_stack_end` zeigt, was, wie der Name sagt, die Adresse des obersten Elements aller Funktionsstacks enthält. Da `ld-linux` geleakt ist, kann auch die Adresse von `__libc_stack_end` zur Laufzeit berechnet werden. Mit dem Vorgehen, bei der Abfrage des gewünschten Befehls l einzugeben und dann wie bei den vorhergehenden Leaks den berechneten Abstand zur geleakten `ld-linux`-Adresse einzugeben, wird der Wert von `__libc_stack_end` geleakt. Wird die gleiche Abfolge von Eingaben in die Konsole getätigt, werden immer die gleichen Funktionen nacheinander aufgerufen, wodurch die Struktur des Call-Stacks innerhalb des Stacks gleich bleibt. So bleibt über jede Programmausführung hinweg bleibt Abstand zwischen `__libc_stack_end` und dem Wert des RBP-Registers gleich, wodurch auch RBP immer berechnet werden kann. Somit ist auch das Wert des RBP-Registers der Stack geleakt.
 
+### Heap leaken
+Da im C-Code kein Speicher alloziiert wird (z. B. über malloc oder calloc), und das Ziel ist, den Inhalt einer Datei auf der Konsole auszugeben, ist es nicht notwendig, den Heap zu leaken. Da schon Binary, `libc`, `ld-linux` und der Stack bei jeder Ausführung des Programms geleakt sind, ist auch hier schon gezeigt, dass ASLR gegen Informations-Leaks wirkungslos ist.
 
 
 ## 2.2 Identifizieren nützliche ROP-Gadgets z. B. in dem Programm oder der libc. Erklären Sie welche ROP-Gadgets Sie verwendet haben.
-An dem Punkt, wo die Startadressen der Binary, der libc, ld-linux-Bibliotheken und des Stacks geleakt werden konnten, sieht der Speicher wie folgt aus:
+An dem Punkt, kurz nachdem die Startadressen der Binary, der libc, ld-linux-Bibliotheken und des Stacks geleakt werden konnten, sieht der Speicher wie folgt aus:
 
 ```
-
-RBP-0x60: buf[0...15]
-RBP-0x50: buf[16...31]
-RBP-0x40: buf[32...47]
-RBP-0x30: buf[48...63]
-RBP-0x20: (ptr -> stdin) (ptr -> real_main+101, kurz vor explicit_bzero)
-RBP-0x10: p64(0) 
-
-```
-
-
-Da unabhängig von PIE und ASLR die Startadressen der Binary und von libc geleakt werden, steht die gesamte Binary sowie libc zur Findung von Gadgets zur Verfügung. Da DEP/NX auch aktiviert ist, beschränkt sich die Suche von Gadgets auf die ausführbaren Bereiche der Binary und libc:
-* BEGIN_OF_BINARY + 0x1000 bis BEGIN_OF_BINARY + 0x1FFF
-* BEGIN_OF_LIBC + 0x28000 bis BEGIN_OF_LIBC + 0x1BCFFF
-Um den Inhalt von secret.log auszugeben, wird so in der ROP-Chain vorgegangen: Mit Gadgets aus der Binary werden die Register passend gesetzt, um die libc-Funktionen aufzurufen.
-
-Der ausführbare Teil des Binary wird aufgeteilt in Bereiche, die mit einem C3-Byte enden. C3 ist unter x64 der Opcode für RET. Von allen RET-Instruktionen werden alle möglichen ROP-Gadgets rückwärts disassembliert. Erst wird nur das RET disassembliert, dann werden solange von links Bytes zum Disassemblieren hinzugefügt, bis das vorige RET oder der Beginn des ausführbaren Teils des Binarys erreicht ist. Unter allen Kandidaten von ROP-Gadgets werden diejenigen rausgefiltert, die länger als 25 Bytes sind. Dies hängt damit zusammen, dass ROP-Gadgets i. A. kurz sind. Außerdem werden die Gadget-Kandidaten herausgefiltert, deren Disassembly nicht mit einer RET-Instruktion endet, sondern das C3-Byte am Ende als Teil einer anderen Instruktion interpretiert worden wären. Das Ergebnis ist in `./notes/possible_rop_gadgets.txt` vermerkt, erwähnenswerte Kandidaten sind (Adressen sind relativ zum Beginn der Binary bzw. libc):
-
-Aus der Binary
-```
-Von 0x1286 bis 0x1287
-2 Bytes vom RET entfernt
-0x00001286:	5e                              pop	rsi
-0x00001287:	c3                              ret	
-
-Von 0x12f0 bis 0x12f1
-2 Bytes vom RET entfernt
-0x000012f0:	5b                              pop	rbx
-0x000012f1:	c3                              ret	
-
-Von 0x1666 bis 0x1667
-2 Bytes vom RET entfernt
-0x00001666:	59                              pop	rcx
-0x00001667:	c3                              ret	
-```
-
-Aus libc:
-```
-Von 0x4dd53 bis 0x4dd54
-2 Bytes vom RET entfernt
-0x0004dd53:	5f                              pop	rdi
-0x0004dd54:	c3                              ret	
-
-Von 0x904a8 bis 0x904ab
-4 Bytes vom RET entfernt
-0x000904a8:	58                              pop	rax
-0x000904a9:	5a                              pop	rdx
-0x000904aa:	5b                              pop	rbx
-0x000904ab:	c3                              ret	
-
-Von 0xf0e5c bis 0xf0e64
-9 Bytes vom RET entfernt
-0x000f0e5c:	41 5c                           pop	r12
-0x000f0e5e:	41 5d                           pop	r13
-0x000f0e60:	41 5e                           pop	r14
-0x000f0e62:	41 5f                           pop	r15
-0x000f0e64:	c3                              ret	
-
-Von 0x121e0a bis 0x121e11
-8 Bytes vom RET entfernt
-0x00121e0a:	49 89 d8                        mov	r8, rbx
-0x00121e0d:	4c 89 c0                        mov	rax, r8
-0x00121e10:	5b                              pop	rbx
-0x00121e11:	c3                              ret	
-
-Von 0x779b3 bis 0x779bf
-13 Bytes vom RET entfernt
-0x000779b3:	49 89 c1                        mov	r9, rax
-0x000779b6:	41 5c                           pop	r12
-0x000779b8:	41 5d                           pop	r13
-0x000779ba:	4c 89 c8                        mov	rax, r9
-0x000779bd:	41 5e                           pop	r14
-0x000779bf:	c3                              ret	
+RBP-0x60: buf[0...7]
+RBP-0x55: buf[8...15]
+RBP-0x50: buf[16...23]
+RBP-0x48: buf[24...31]
+RBP-0x40: buf[32...39]
+RBP-0x38: buf[40...47]
+RBP-0x30: buf[48...55]
+RBP-0x28: buf[56...63]
+RBP-0x20: (ptr -> stdin) 
+RBP-0x18: RETURN-Adresse: (ptr -> real_main+101, kurz vor explicit_bzero)
 ```
 
 
-In der Methode `load_real` (getreal3.c, Z. 77 ff.) wird in den 64 Byte großen Buffer `password` mit `fgets(buf, 640, stdin)` vom Benutzer eine bis zu 640 Byte lange Eingabe eingelesen. Da das Passwort höchstwahrscheinlich falsch sein wird, gelangt das Programm zur Anweisung `printf("ACCESS DENIED: your input:\n%s", buf);` (getreal3.c, Z. 77 ff.). 
+Durch die Info-Leaks steht die gesamte Binary sowie `libc` und `ld-linux` zur Findung von Gadgets zur Verfügung. Da DEP/NX auch aktiviert ist, beschränkt sich die Suche von Gadgets auf die ausführbaren Bereiche der vorher genannten Adressräume und Offset-Bereiche:
+* Binary: 0x1000 bis 0x1FFFF
+* libc: 0x28000 bis 0x1BCFFF
+* ld-linux: 0x2000 bis 0x2BFFF
+
+
+Zur Suche nach Gadgets werden in den genannten Adressräumen alle Bereiche betrachtet, die max. 15 Bytes vor einer Return-Instruktion sind. Von allen RET-Instruktionen werden alle möglichen ROP-Gadgets rückwärts disassembliert bis max. 15 Bytes vor der RET-Instruktion. Erst wird nur das RET disassembliert, dann werden solange von links Bytes zum Disassemblieren hinzugefügt, bis der Abstand von 15 Bytes vor dem RET, das vorige RET, oder der Beginn des Adressbereichs erreicht ist. Kein Gadget soll länger als 15 Bytes lang sein, weil ROP-Gadgets i. A. kurz sind. Am Ende eines Gadgets steht ein C3-Byte, denn C3 ist unter x64 der Opcode für RET.Es werden die Gadget-Kandidaten herausgefiltert, deren Disassembly nicht mit einer RET-Instruktion endet, weil das C3-Byte am Ende als Teil einer anderen Instruktion interpretiert worden wäre. Das Ergebnis ist in den Textdateien aus dem Ordner `./notes/rop_gadgets/` vermerkt. Erwähnenswerte Kandidaten sind:
+
+Aus `libc` wurden folgende Gadgets ausgewählt:
+```
+G0:
+0x00042759:	0f 05                           syscall	
+
+G1:
+0x00045eb0:	58                              pop	rax
+0x00045eb1:	c3                              ret	
+
+G2:
+0x0002a3e5:	5f                              pop	rdi
+0x0002a3e6:	c3                              ret	
+
+G3:
+0x001bb217:	5e                              pop	rsi
+0x001bb218:	c3                              ret	
+
+G4:
+0x0011f357:	5a                              pop	rdx
+0x0011f358:	41 5c                           pop	r12
+0x0011f35a:	c3                              ret	
+
+G5:
+0x0003d1ee:	59                              pop	rcx
+0x0003d1ef:	c3                              ret	
+
+G6:
+0x0005a272:	48 89 c7                        mov	rdi, rax
+0x0005a275:	48 39 ca                        cmp	rdx, rcx
+0x0005a278:	73 e2                           jae	0x5a25c
+0x0005a27a:	4c 89 c0                        mov	rax, r8
+0x0005a27d:	c3                              ret	
+```
+
+Da `libc`-Funktionen wie execve, system und exit auf den entsprechenden Syscalls basieren, ist in `libc` mindestens ein Syscall enthalten. Die Bytefolge `0f 05` ist der Opcode für `SYSCALL`. Dies wird als Gadget 0 gewählt. Dann, um Syscalls auszuführen, werden als Gadgets 1 bis 4 die Gadgets gewählt, die die Register RAX, RDI, RSI und RDX befüllen, mit so wenigen Seiteneffekten wie möglich. Bei Gadget 4 muss man neben dem Wert für RDX einen weiteren, beliebigen Wert angeben, der an das nicht mehr benutzte Register R12 geschrieben wird. Um mögliche Ausgaben für Syscalls weiterverwenden zu können, wurde als Gadget 6 eines mit der Anweisung `MOV RDI, RAX` gewählt. Da dort mit `JAE 0x5a25c` ein JAE-Sprung zu einer auf jeden Fall nicht gemappten Adresse vorkommt, und RDX schon über Gadget 4 gesetzt werden kann, wird Gadget 5 genutzt, um RCX so zu setzen, dass das `JAE 0x5a25c` im Gadget 6 nicht ausgeführt wird. RAX kann später mit Gadget 1 nach Gadget 6 neu beschrieben werden.
+
+
+## 2.3 Erweitern Sie exploit.py zu einem funktionierenden Angriff. Ihr Angriff soll mindestens die erste Zeile der Datei secret.log auslesen und ausgeben.
+In der Methode `load_real` (getreal3.c, Z. 77 ff.) wird in den 64 Byte großen Buffer `password` mit `fgets(buf, 640, stdin)` vom Benutzer eine bis zu 640 Byte lange Eingabe eingelesen. Die Eingabe, um den Angriff auszuführen, besteht aus drei Teilen:
+* 64 Bytes Text, um den Buffer zu füllen
+* 8 Bytes die Adresse zu `stdin`. Diese muss intakt bleiben, da ansonsten ein Segfault auftritt und das Programm abstürzt.
+* Bis zu 568 Bytes bzw. 71 Glieder à 8 Bytes ROP-Chain 
+
+Die ROP-Chain wird wie folgt aufgebaut:
+
+### Datei `./secret.log` öffnen
+Um die Datei `./secret.log` zu öffnen, müssen die Register wie folgt gesetzt werden:
+* RAX = 2 (Nummer des Open-Syscalls)
+* RDI = ptr->filename
+* RSI = 0 (Nummer für den 'read'-Mode)
+RDI wird gesetzt, indem der String `./secret.log\0` nach der ROP-Chain auf dem Stack abgelegt wird. Da RBP geleakt ist, kann dieser String immer erreicht werden.
+
+### Inhalt der Datei `./secret.log` in einen Buffer speichern
+Um den Inhalt der Datei `./secret.log` in einen Buffer zu speichern, müssen die Register wie folgt gesetzt werden:
+* RAX = 0 (Nummer des Read-Syscalls)
+* RDI = File Descriptor von `./secret.log`
+* RSI = ptr->password
+Um den Wert von RAX auf RDI zu übertragen, wird Gadget 6 verwendet. Vor der Nutzung von Gadget 6 wird mit Gadget 5 RCX auf einen sehr hohen Wert gesetzt und mit Gadget 4 RDX auf einen sehr niedrigen Wert gesetzt, damit in Gadget 6 die Instruktion `JAE 0x5a25c` nicht ausgeführt wird. Mit Gadget 1 wird RAX neu beschrieben. Als Speicherort für die gelesenen Daten wird ein großer globaler Buffer in einem beschreibbaren Datenbereich genutzt. Hierzu eignet sich beispielsweise der Buffer `password`, da er durch den ROP-Angriff nicht mehr regulär verwendet wird. Die Adresse ist nach dem Leak der Binary-Startadresse ebenfalls zur Laufzeit bestimmbar.
+
+### Den gespeicherten Inhalt auf der Konsole ausgeben
+Um den gespeicherten Inhalt auf der Konsole auszugeben, müssen die Register wie folgt gesetzt werden:
+* RAX = 1 (Nummer des Write-Syscalls)
+* RDI = 1 (File-Descriptor von `stdout`)
+* RSI = ptr->password
+* RDX = 0x40
+Die Werte aus RSI und RDX können weiterverwendet werden, weil sie sich nach dem Speichern des Inhalts in den Buffer nicht geändert haben. 
+
+### Das Programm sauber beenden
+Um das Programm sauber zu beenden, müssen zuletzt noch die folgenden Werte in den Registern sein:
+* RAX = 60 (Nummer des Exit-Syscalls)
+* RDI = 0 (Exit-Code)
+Diese können über Gadgets 1 und 2 gesetzt werden.
