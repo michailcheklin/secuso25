@@ -65,9 +65,9 @@ def find_gadgets(elf: ELF, virtual_start_address:int, virtual_end_address:int, o
 
     ret_bytes = b"\xc3"  # we directly hardcode the byte of the return instruction
     ret_insts = [(virtual_start_address + offset)
-                for offset, byte in enumerate(libc.read(virtual_start_address, _read_length))
+                for offset, byte in enumerate(elf.read(virtual_start_address, _read_length))
                 if byte == ret_bytes[0]]
-
+    
     inter_ret_part_starts = [virtual_start_address] + ret_insts 
     inter_ret_part_starts = [x+1 for x in inter_ret_part_starts]
     inter_ret_part_starts[0] -= 1
