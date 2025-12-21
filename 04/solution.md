@@ -34,6 +34,12 @@ An den Symbolen wie `got.puts` sind Pointer zu der jeweils entsprechenden Funkti
 
 Mit dem Terminal-Befehl `readelf -s --wide /usr/lib/x86_64-linux-gnu/libc.so.6 | grep "FUNC *GLOBAL *DEFAULT" >> libc_function_list.txt` kann die Liste aller libc-Funktionen, die von außerhalb von libc aufgerufen werden können in einer Textdatei gespeichert werden. Die zweite Spalte der so entstandenen Textdatei zeigt als Hexadezimalzahl den Abstand der jeweiligen Funktion zum Beginn von libc an, beispielsweise liegt der Beginn der Funktion `puts` 0x80E50 (dezimal 527952) Bytes nach dem Beginn von libc (s. auch /2_piereal/notes/libc_function_list.txt Z. 998). Mit dem gefundenen Offset lässt sich die Startadresse von libc immer ausrechnen, obwohl PIE und ASLR aktiviert sind.
 
+Da sich die Startadresse von libc ausrechnen lässt, kann die Adresse jeder Funktion aus libc ausgerechnet werden, darunter auch die Adresse des Objekts `__nptl_rtld_global`, welches immer einen Pointer beinhaltet, der in den Speicherbereich `ld-linux` zeigt. Das Objekt befindet sich immer 0x21b878 Bytes nach dem Start von libc. Mit der Eingabe von l als gewünschten Befehl und danach den errechneten Abstand zwischen `help_msg`und `libc+0x21b878` geteilt durch 8, kann eine Adresse des `ld-linux`-Bereichs geleakt werden. Da diese Adresse immer 0x3a040 Bytes nach dem Beginn von `ld-linux` ist, kann auch die Startadresse von `ld-linux` und somit alle Adressen aus `ld-linux` geleakt werden, obwohl ASLR und PIE aktiviert sind.
+
+In `ld-linux` befindet sich immer 0x39a90 Bytes von dessen Start das Objekt `__libc_stack_end` zeigt, was, wie der Name sagt, die Adresse des obersten Elements aller Funktionsstacks enthält. Wird die gleiche Abfolge von Eingaben in die Konsole getätigt, werden immer die gleichen Funktionen nacheinander aufgerufen, wodurch die Struktur des Call-Stacks gleich bleibt. Hierdurch bleibt der Abstand zwischen `__libc_stack_end` und dem Wert des RBP-Registers gleich, wodurch auch RBP immer berechnet werden kann. Somit ist auch der Stack geleakt.
+
+
+
 
 ## 2.2 Identifizieren nützliche ROP-Gadgets z. B. in dem Programm oder der libc. Erklären Sie welche ROP-Gadgets Sie verwendet haben.
 Da unabhängig von PIE und ASLR die Startadressen der Binary und von libc geleakt werden, steht die gesamte Binary sowie libc zur Findung von Gadgets zur Verfügung. Da DEP/NX auch aktiviert ist, beschränkt sich die Suche von Gadgets auf die ausführbaren Bereiche der Binary und libc:
@@ -101,4 +107,4 @@ Von 0x779b3 bis 0x779bf
 ```
 
 
-In der Methode `load_real` (getreal3.c, Z. 77 ff.) wird in den 64 Byte großen Buffer `password` mit `fgets(buf, 640, stdin)` vom Benutzer eine bis zu 640 Byte lange Eingabe eingelesen. Da das Passwort höchstwahrscheinlich falsch sein wird, gelangt das Programm zur Anweisung `printf("ACCESS DENIED: your input:\n%s", buf);` (getreal3.c, Z. 77 ff.). Die `printf()`-Funktion reagiert auf `%s` wie folgt: Es beginnt am Beginn von buf zu lesen, bis ein \0-Byte kommt. Wenn die ersten 64 Bytes kein \0-Byte enthalten, so können weitere Bytes bis zum ersten \0-Byte aus dem Speicher gelesen werden.
+In der Methode `load_real` (getreal3.c, Z. 77 ff.) wird in den 64 Byte großen Buffer `password` mit `fgets(buf, 640, stdin)` vom Benutzer eine bis zu 640 Byte lange Eingabe eingelesen. Da das Passwort höchstwahrscheinlich falsch sein wird, gelangt das Programm zur Anweisung `printf("ACCESS DENIED: your input:\n%s", buf);` (getreal3.c, Z. 77 ff.). 
