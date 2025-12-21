@@ -61,78 +61,50 @@ def cs_format_insts(insts: Iterable[capstone.CsInsn]) -> str:
         inst_text.append(f"{i.address:#010x}:\t{i_bytes}  {asm_text}")
     return "\n".join(inst_text)
 
-
-# Versuche in der Binary ROP-Gadgets zu finden
-gadgets_start_addr = 0x1000
-gadgets_end_addr = 0x1674
-_read_length = gadgets_end_addr - gadgets_start_addr
-
-ret_bytes = b"\xc3"  # we directly hardcode the byte of the return instruction
-ret_insts = [(gadgets_start_addr + offset)
-            for offset, byte in enumerate(libc.read(gadgets_start_addr, _read_length))
-            if byte == ret_bytes[0]]
-log.info(
-    f"discovered {len(ret_insts)} return instructions at addresses {list(map(hex, ret_insts))}"
-)
-
-inter_ret_part_starts = [gadgets_start_addr] + ret_insts 
-inter_ret_part_starts = [x+1 for x in inter_ret_part_starts]
-inter_ret_part_starts[0] -= 1
-
-inter_ret_part_ends = ret_insts + [gadgets_end_addr]
-log.debug(f"Inter-RET-ranges: { ''.join([f'{hex(x)} - {hex(y)}; ' for x, y in zip(inter_ret_part_starts, inter_ret_part_ends)])}")
-
 MAX_BYTES_PER_ROP_GADGET = 15
 
-with open("./notes/possible_rop_gadgets.txt", "w") as notes:
-    for begin_of_inter_ret_part, end_of_inter_ret_part in zip(inter_ret_part_starts, inter_ret_part_ends):
-        length_of_inter_ret_part = end_of_inter_ret_part - begin_of_inter_ret_part
-        for i in range(length_of_inter_ret_part):
-            amount_of_processed_bytes = length_of_inter_ret_part-i+1
-            instructions = cs_disasm_at(velf, begin_of_inter_ret_part+i, amount_of_processed_bytes)
-            if len(instructions)>0 and amount_of_processed_bytes < MAX_BYTES_PER_ROP_GADGET and instructions[-1].mnemonic == "ret":
-                log.debug(instructions)
-                notes.write("\n")
-                notes.write(f"Von {hex(begin_of_inter_ret_part+i)} bis {hex(end_of_inter_ret_part)}")
-                notes.write("\n")
-                notes.write(f"{amount_of_processed_bytes} Bytes vom RET entfernt")
-                notes.write("\n")
-                notes.write(cs_format_insts(instructions))
-                notes.write("\n")
+
+def find_gadgets(elf: ELF, virtual_start_address:int, virtual_end_address:int, output_filename:str):
+    _read_length = virtual_end_address - virtual_start_address
+
+    ret_bytes = b"\xc3"  # we directly hardcode the byte of the return instruction
+    ret_insts = [(virtual_start_address + offset)
+                for offset, byte in enumerate(libc.read(virtual_start_address, _read_length))
+                if byte == ret_bytes[0]]
+    log.info(
+        f"discovered {len(ret_insts)} return instructions at addresses {list(map(hex, ret_insts))}"
+    )
+
+    inter_ret_part_starts = [virtual_start_address] + ret_insts 
+    inter_ret_part_starts = [x+1 for x in inter_ret_part_starts]
+    inter_ret_part_starts[0] -= 1
+
+    inter_ret_part_ends = ret_insts + [virtual_end_address]
+    log.debug(f"Inter-RET-ranges: { ''.join([f'{hex(x)} - {hex(y)}; ' for x, y in zip(inter_ret_part_starts, inter_ret_part_ends)])}")
+
+
+
+    with open(output_filename, "w") as notes:
+        for begin_of_inter_ret_part, end_of_inter_ret_part in zip(inter_ret_part_starts, inter_ret_part_ends):
+            length_of_inter_ret_part = end_of_inter_ret_part - begin_of_inter_ret_part
+            for i in range(length_of_inter_ret_part):
+                amount_of_processed_bytes = length_of_inter_ret_part-i+1
+                instructions = cs_disasm_at(elf, begin_of_inter_ret_part+i, amount_of_processed_bytes)
+                if len(instructions)>0 and amount_of_processed_bytes < MAX_BYTES_PER_ROP_GADGET and instructions[-1].mnemonic == "ret":
+                    log.debug(instructions)
+                    notes.write("\n")
+                    notes.write(f"Von {hex(begin_of_inter_ret_part+i)} bis {hex(end_of_inter_ret_part)}")
+                    notes.write("\n")
+                    notes.write(f"{amount_of_processed_bytes} Bytes vom RET entfernt")
+                    notes.write("\n")
+                    notes.write(cs_format_insts(instructions))
+                    notes.write("\n")
+
+
+
+# Versuche in der Binary ROP-Gadgets zu finden
+find_gadgets(velf, 0x1000, 0x1674, "./notes/2possible_rop_gadgets.txt")
 
 # Versuche in libc ROP-Gadgets zu finden
 # WARNUNG: Das dauert ca. 20 Minuten!
-gadgets_start_addr = 0x28000
-gadgets_end_addr = 0x1bcfff
-_read_length = gadgets_end_addr - gadgets_start_addr
-
-ret_bytes = b"\xc3"  # we directly hardcode the byte of the return instruction
-ret_insts = [(gadgets_start_addr + offset)
-            for offset, byte in enumerate(libc.read(gadgets_start_addr, _read_length))
-            if byte == ret_bytes[0]]
-log.info(
-    f"discovered {len(ret_insts)} return instructions at addresses {list(map(hex, ret_insts))}"
-)
-
-inter_ret_part_starts = [gadgets_start_addr] + ret_insts 
-inter_ret_part_starts = [x+1 for x in inter_ret_part_starts]
-inter_ret_part_starts[0] -= 1
-
-inter_ret_part_ends = ret_insts + [gadgets_end_addr]
-log.debug(f"Inter-RET-ranges: { ''.join([f'{hex(x)} - {hex(y)}; ' for x, y in zip(inter_ret_part_starts, inter_ret_part_ends)])}")
-
-with open("./notes/possible_rop_gadgets_libc.txt", "w") as notes:
-    for begin_of_inter_ret_part, end_of_inter_ret_part in zip(inter_ret_part_starts, inter_ret_part_ends):
-        length_of_inter_ret_part = end_of_inter_ret_part - begin_of_inter_ret_part
-        for i in range(length_of_inter_ret_part):
-            amount_of_processed_bytes = length_of_inter_ret_part-i+1
-            instructions = cs_disasm_at(libc, begin_of_inter_ret_part+i, amount_of_processed_bytes)
-            if len(instructions)>0 and amount_of_processed_bytes < MAX_BYTES_PER_ROP_GADGET and instructions[-1].mnemonic == "ret":
-                log.debug(instructions)
-                notes.write("\n")
-                notes.write(f"Von {hex(begin_of_inter_ret_part+i)} bis {hex(end_of_inter_ret_part)}")
-                notes.write("\n")
-                notes.write(f"{amount_of_processed_bytes} Bytes vom RET entfernt")
-                notes.write("\n")
-                notes.write(cs_format_insts(instructions))
-                notes.write("\n")
+find_gadgets(libc, 0x28000, 0x1bcfff,"./notes/2possible_rop_gadgets_libc.txt")
