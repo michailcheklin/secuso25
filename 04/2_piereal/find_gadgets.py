@@ -1,15 +1,9 @@
-import sys
 import textwrap
 from typing import Iterable, List
 import capstone
 from pwn import context, ELF, gdb, p64, log, disasm, hexdump, process, sleep, cyclic, ROP
 from pwn import *  # noqa
 
-# Zusatz-Importe
-from pygments import highlight
-from pygments.formatters import TerminalFormatter
-from pwnlib.lexer import PwntoolsLexer
-from capstone.x86_const import X86_INS_RET, X86_INS_NOP, X86_INS_UD2
 
 # Nach Gadgets suchen
 
@@ -26,6 +20,8 @@ try:
     libc = ELF("/lib/x86_64-linux-gnu/libc.so.6")
 except FileNotFoundError:
     libc = ELF("/usr/lib/libc.so.6")
+
+ld_linux = ELF("/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2")
 
 
 def cs_disasm_at(
@@ -71,18 +67,13 @@ def find_gadgets(elf: ELF, virtual_start_address:int, virtual_end_address:int, o
     ret_insts = [(virtual_start_address + offset)
                 for offset, byte in enumerate(libc.read(virtual_start_address, _read_length))
                 if byte == ret_bytes[0]]
-    log.info(
-        f"discovered {len(ret_insts)} return instructions at addresses {list(map(hex, ret_insts))}"
-    )
 
     inter_ret_part_starts = [virtual_start_address] + ret_insts 
     inter_ret_part_starts = [x+1 for x in inter_ret_part_starts]
     inter_ret_part_starts[0] -= 1
-
     inter_ret_part_ends = ret_insts + [virtual_end_address]
-    log.debug(f"Inter-RET-ranges: { ''.join([f'{hex(x)} - {hex(y)}; ' for x, y in zip(inter_ret_part_starts, inter_ret_part_ends)])}")
 
-
+    inter_ret_part_starts = [ max(inter_ret_part_starts[i], inter_ret_part_ends[i]-MAX_BYTES_PER_ROP_GADGET+1) for i, x in enumerate(inter_ret_part_starts)]
 
     with open(output_filename, "w") as notes:
         for begin_of_inter_ret_part, end_of_inter_ret_part in zip(inter_ret_part_starts, inter_ret_part_ends):
@@ -91,20 +82,20 @@ def find_gadgets(elf: ELF, virtual_start_address:int, virtual_end_address:int, o
                 amount_of_processed_bytes = length_of_inter_ret_part-i+1
                 instructions = cs_disasm_at(elf, begin_of_inter_ret_part+i, amount_of_processed_bytes)
                 if len(instructions)>0 and amount_of_processed_bytes < MAX_BYTES_PER_ROP_GADGET and instructions[-1].mnemonic == "ret":
-                    log.debug(instructions)
+                    print(f"Gadget gefunden bei {hex(begin_of_inter_ret_part+i)} bis {hex(end_of_inter_ret_part)}")
                     notes.write("\n")
                     notes.write(f"Von {hex(begin_of_inter_ret_part+i)} bis {hex(end_of_inter_ret_part)}")
-                    notes.write("\n")
-                    notes.write(f"{amount_of_processed_bytes} Bytes vom RET entfernt")
                     notes.write("\n")
                     notes.write(cs_format_insts(instructions))
                     notes.write("\n")
 
 
 
-# Versuche in der Binary ROP-Gadgets zu finden
-find_gadgets(velf, 0x1000, 0x1674, "./notes/2possible_rop_gadgets.txt")
+# Versuche in der Binary Gadgets zu finden
+find_gadgets(velf, 0x1000, 0x1674, "./notes/rop_gadgets/binary_gadgets.txt")
 
 # Versuche in libc ROP-Gadgets zu finden
-# WARNUNG: Das dauert ca. 20 Minuten!
-find_gadgets(libc, 0x28000, 0x1bcfff,"./notes/2possible_rop_gadgets_libc.txt")
+find_gadgets(libc, 0x28000, 0x1bcfff, "./notes/rop_gadgets/libc_gadgets.txt")
+
+# Versuche in ld-linux ROP-Gadgets zu finden
+find_gadgets(ld_linux, 0x2000, 0x2bfff, "./notes/rop_gadgets/ld_linux_gadgets.txt")

@@ -1,0 +1,292 @@
+
+Von 0x2902 bis 0x2908
+0x00002902:	ff 49 89                        dec	dword ptr [rcx - 0x77]
+0x00002905:	c3                              ret	
+
+Von 0x2905 bis 0x2908
+0x00002905:	c3                              ret	
+
+Von 0x33be bis 0x33cb
+0x000033be:	52                              push	rdx
+0x000033bf:	7d 03                           jge	0x33c4
+0x000033c1:	00 02                           add	byte ptr [rdx], al
+0x000033c3:	00 00                           add	byte ptr [rax], al
+0x000033c5:	00 4c 89 c0                     add	byte ptr [rcx + rcx*4 - 0x40], cl
+0x000033c9:	c3                              ret	
+
+Von 0x33bf bis 0x33cb
+0x000033bf:	7d 03                           jge	0x33c4
+0x000033c1:	00 02                           add	byte ptr [rdx], al
+0x000033c3:	00 00                           add	byte ptr [rax], al
+0x000033c5:	00 4c 89 c0                     add	byte ptr [rcx + rcx*4 - 0x40], cl
+0x000033c9:	c3                              ret	
+
+Von 0x33c0 bis 0x33cb
+0x000033c0:	03 00                           add	eax, dword ptr [rax]
+0x000033c2:	02 00                           add	al, byte ptr [rax]
+0x000033c4:	00 00                           add	byte ptr [rax], al
+0x000033c6:	4c 89 c0                        mov	rax, r8
+0x000033c9:	c3                              ret	
+
+Von 0x33c1 bis 0x33cb
+0x000033c1:	00 02                           add	byte ptr [rdx], al
+0x000033c3:	00 00                           add	byte ptr [rax], al
+0x000033c5:	00 4c 89 c0                     add	byte ptr [rcx + rcx*4 - 0x40], cl
+0x000033c9:	c3                              ret	
+
+Von 0x33c2 bis 0x33cb
+0x000033c2:	02 00                           add	al, byte ptr [rax]
+0x000033c4:	00 00                           add	byte ptr [rax], al
+0x000033c6:	4c 89 c0                        mov	rax, r8
+0x000033c9:	c3                              ret	
+
+Von 0x33c3 bis 0x33cb
+0x000033c3:	00 00                           add	byte ptr [rax], al
+0x000033c5:	00 4c 89 c0                     add	byte ptr [rcx + rcx*4 - 0x40], cl
+0x000033c9:	c3                              ret	
+
+Von 0x33c4 bis 0x33cb
+0x000033c4:	00 00                           add	byte ptr [rax], al
+0x000033c6:	4c 89 c0                        mov	rax, r8
+0x000033c9:	c3                              ret	
+
+Von 0x33c5 bis 0x33cb
+0x000033c5:	00 4c 89 c0                     add	byte ptr [rcx + rcx*4 - 0x40], cl
+0x000033c9:	c3                              ret	
+
+Von 0x33c6 bis 0x33cb
+0x000033c6:	4c 89 c0                        mov	rax, r8
+0x000033c9:	c3                              ret	
+
+Von 0x33c7 bis 0x33cb
+0x000033c7:	89 c0                           mov	eax, eax
+0x000033c9:	c3                              ret	
+
+Von 0x33c9 bis 0x33cb
+0x000033c9:	c3                              ret	
+
+Von 0x10588 bis 0x10590
+0x00010588:	c2 e8 12                        ret	0x12e8
+
+Von 0x144db bis 0x144e8
+0x000144db:	5b                              pop	rbx
+0x000144dc:	5d                              pop	rbp
+0x000144dd:	4c 89 e0                        mov	rax, r12
+0x000144e0:	41 5c                           pop	r12
+0x000144e2:	c3                              ret	
+
+Von 0x144dc bis 0x144e8
+0x000144dc:	5d                              pop	rbp
+0x000144dd:	4c 89 e0                        mov	rax, r12
+0x000144e0:	41 5c                           pop	r12
+0x000144e2:	c3                              ret	
+
+Von 0x144dd bis 0x144e8
+0x000144dd:	4c 89 e0                        mov	rax, r12
+0x000144e0:	41 5c                           pop	r12
+0x000144e2:	c3                              ret	
+
+Von 0x144de bis 0x144e8
+0x000144de:	89 e0                           mov	eax, esp
+0x000144e0:	41 5c                           pop	r12
+0x000144e2:	c3                              ret	
+
+Von 0x144df bis 0x144e8
+0x000144df:	e0 41                           loopne	0x14522
+0x000144e1:	5c                              pop	rsp
+0x000144e2:	c3                              ret	
+
+Von 0x144e0 bis 0x144e8
+0x000144e0:	41 5c                           pop	r12
+0x000144e2:	c3                              ret	
+
+Von 0x144e1 bis 0x144e8
+0x000144e1:	5c                              pop	rsp
+0x000144e2:	c3                              ret	
+
+Von 0x144e2 bis 0x144e8
+0x000144e2:	c3                              ret	
+
+Von 0x2a16c bis 0x2a179
+0x0002a16c:	0f 1f 40 00                     nop	dword ptr [rax]
+0x0002a170:	0f bc c0                        bsf	eax, eax
+0x0002a173:	48 8d 44 38 f0                  lea	rax, [rax + rdi - 0x10]
+0x0002a178:	c3                              ret	
+
+Von 0x2a16e bis 0x2a179
+0x0002a16e:	40 00 0f                        add	byte ptr [rdi], cl
+0x0002a171:	bc c0 48 8d 44                  mov	esp, 0x448d48c0
+0x0002a176:	38 f0                           cmp	al, dh
+0x0002a178:	c3                              ret	
+
+Von 0x2a16f bis 0x2a179
+0x0002a16f:	00 0f                           add	byte ptr [rdi], cl
+0x0002a171:	bc c0 48 8d 44                  mov	esp, 0x448d48c0
+0x0002a176:	38 f0                           cmp	al, dh
+0x0002a178:	c3                              ret	
+
+Von 0x2a170 bis 0x2a179
+0x0002a170:	0f bc c0                        bsf	eax, eax
+0x0002a173:	48 8d 44 38 f0                  lea	rax, [rax + rdi - 0x10]
+0x0002a178:	c3                              ret	
+
+Von 0x2a171 bis 0x2a179
+0x0002a171:	bc c0 48 8d 44                  mov	esp, 0x448d48c0
+0x0002a176:	38 f0                           cmp	al, dh
+0x0002a178:	c3                              ret	
+
+Von 0x2a172 bis 0x2a179
+0x0002a172:	c0 48 8d 44                     ror	byte ptr [rax - 0x73], 0x44
+0x0002a176:	38 f0                           cmp	al, dh
+0x0002a178:	c3                              ret	
+
+Von 0x2a173 bis 0x2a179
+0x0002a173:	48 8d 44 38 f0                  lea	rax, [rax + rdi - 0x10]
+0x0002a178:	c3                              ret	
+
+Von 0x2a174 bis 0x2a179
+0x0002a174:	8d 44 38 f0                     lea	eax, [rax + rdi - 0x10]
+0x0002a178:	c3                              ret	
+
+Von 0x2a175 bis 0x2a179
+0x0002a175:	44 38 f0                        cmp	al, r14b
+0x0002a178:	c3                              ret	
+
+Von 0x2a176 bis 0x2a179
+0x0002a176:	38 f0                           cmp	al, dh
+0x0002a178:	c3                              ret	
+
+Von 0x2a178 bis 0x2a179
+0x0002a178:	c3                              ret	
+
+Von 0x2a3d9 bis 0x2a3e6
+0x0002a3d9:	0f 1f 80 00 00 00 00            nop	dword ptr [rax]
+0x0002a3e0:	0f bc c0                        bsf	eax, eax
+0x0002a3e3:	48 01 f8                        add	rax, rdi
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3db bis 0x2a3e6
+0x0002a3db:	80 00 00                        add	byte ptr [rax], 0
+0x0002a3de:	00 00                           add	byte ptr [rax], al
+0x0002a3e0:	0f bc c0                        bsf	eax, eax
+0x0002a3e3:	48 01 f8                        add	rax, rdi
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3dc bis 0x2a3e6
+0x0002a3dc:	00 00                           add	byte ptr [rax], al
+0x0002a3de:	00 00                           add	byte ptr [rax], al
+0x0002a3e0:	0f bc c0                        bsf	eax, eax
+0x0002a3e3:	48 01 f8                        add	rax, rdi
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3dd bis 0x2a3e6
+0x0002a3dd:	00 00                           add	byte ptr [rax], al
+0x0002a3df:	00 0f                           add	byte ptr [rdi], cl
+0x0002a3e1:	bc c0 48 01 f8                  mov	esp, 0xf80148c0
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3de bis 0x2a3e6
+0x0002a3de:	00 00                           add	byte ptr [rax], al
+0x0002a3e0:	0f bc c0                        bsf	eax, eax
+0x0002a3e3:	48 01 f8                        add	rax, rdi
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3df bis 0x2a3e6
+0x0002a3df:	00 0f                           add	byte ptr [rdi], cl
+0x0002a3e1:	bc c0 48 01 f8                  mov	esp, 0xf80148c0
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3e0 bis 0x2a3e6
+0x0002a3e0:	0f bc c0                        bsf	eax, eax
+0x0002a3e3:	48 01 f8                        add	rax, rdi
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3e1 bis 0x2a3e6
+0x0002a3e1:	bc c0 48 01 f8                  mov	esp, 0xf80148c0
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3e2 bis 0x2a3e6
+0x0002a3e2:	c0 48 01 f8                     ror	byte ptr [rax + 1], 0xf8
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3e3 bis 0x2a3e6
+0x0002a3e3:	48 01 f8                        add	rax, rdi
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3e4 bis 0x2a3e6
+0x0002a3e4:	01 f8                           add	eax, edi
+0x0002a3e6:	c3                              ret	
+
+Von 0x2a3e5 bis 0x2a3e6
+0x0002a3e5:	f8                              clc	
+0x0002a3e6:	c3                              ret	
+
+Von 0x2abce bis 0x2abdb
+0x0002abce:	48 09 ca                        or	rdx, rcx
+0x0002abd1:	48 0f bc d2                     bsf	rdx, rdx
+0x0002abd5:	48 01 d0                        add	rax, rdx
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abcf bis 0x2abdb
+0x0002abcf:	09 ca                           or	edx, ecx
+0x0002abd1:	48 0f bc d2                     bsf	rdx, rdx
+0x0002abd5:	48 01 d0                        add	rax, rdx
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd0 bis 0x2abdb
+0x0002abd0:	ca 48 0f                        retf	0xf48
+0x0002abd3:	bc d2 48 01 d0                  mov	esp, 0xd00148d2
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd1 bis 0x2abdb
+0x0002abd1:	48 0f bc d2                     bsf	rdx, rdx
+0x0002abd5:	48 01 d0                        add	rax, rdx
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd2 bis 0x2abdb
+0x0002abd2:	0f bc d2                        bsf	edx, edx
+0x0002abd5:	48 01 d0                        add	rax, rdx
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd3 bis 0x2abdb
+0x0002abd3:	bc d2 48 01 d0                  mov	esp, 0xd00148d2
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd4 bis 0x2abdb
+0x0002abd4:	d2 48 01                        ror	byte ptr [rax + 1], cl
+0x0002abd7:	d0 48 29                        ror	byte ptr [rax + 0x29], 1
+0x0002abda:	f8                              clc	
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd5 bis 0x2abdb
+0x0002abd5:	48 01 d0                        add	rax, rdx
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd6 bis 0x2abdb
+0x0002abd6:	01 d0                           add	eax, edx
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd7 bis 0x2abdb
+0x0002abd7:	d0 48 29                        ror	byte ptr [rax + 0x29], 1
+0x0002abda:	f8                              clc	
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd8 bis 0x2abdb
+0x0002abd8:	48 29 f8                        sub	rax, rdi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abd9 bis 0x2abdb
+0x0002abd9:	29 f8                           sub	eax, edi
+0x0002abdb:	c3                              ret	
+
+Von 0x2abda bis 0x2abdb
+0x0002abda:	f8                              clc	
+0x0002abdb:	c3                              ret	
