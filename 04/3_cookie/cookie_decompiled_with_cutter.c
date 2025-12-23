@@ -25,19 +25,19 @@ void give_cookie()
         read(stdin, &wanted_cookie, 100);
         if (strcmp(wanted_cookie, "chocolate\n") == 0)
         {
-            puts("There you go a: \xf0\x9f\x8d\xaa\x00"); 
+            puts("There you go a: \xf0\x9f\x8d\xaa\x00"); // \xf0\x9f\x8d\xaa = 🍪
         }
         else if (strcmp(wanted_cookie, "pizza\n") == 0)
         {
-            puts("Technically not a cookie, but ok: \xf0\x9f\x8d\x95\x00\x00");
+            puts("Technically not a cookie, but ok: \xf0\x9f\x8d\x95\x00"); // \xf0\x9f\x8d\x95 = 🍕
         }
         else if (strcmp(wanted_cookie, "fortune\n") == 0)
         {
-            puts("There you go a: \xf0\x9f\xa5\xa0\x00");
+            puts("There you go a: \xf0\x9f\xa5\xa0\x00"); // \xf0\x9f\xa5\xa0 = 🥠
         }
         else if (strcmp(wanted_cookie, "rice\n") == 0)
         {
-            puts("Pretty boring...: \xf0\x0f\x8d\x98\x00");
+            puts("Pretty boring...: \xf0\x9f\x8d\x98\x00"); // \xf0\x9f\x8d\x98 = 🍘
         }
         else
         {
