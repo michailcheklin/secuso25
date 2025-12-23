@@ -1,4 +1,6 @@
-## Übungsblatt 4 - Praktische Übung Randomisation
+# Übungsblatt 4 - Praktische Übung Randomisation
+ 
+# 1 Arbitrary Read
 
 ## 1.1 Wo befindet sich die Buffer Overflow Schwachstelle in diesem Programm? Als Teil eines Arbitrary Read muss immer ein Pointer manipuliert werden. • Welchen Pointer können Sie überschreiben? • Wo und wie wird dieser Pointer später verwendet? • Wie erhalten Sie dadurch einen Arbitrary Read ? • Wie viele Daten können Sie dann damit lesen?
 Die Buffer-Overflow-Schwachstelle ist in `if (fgets(*data->ptr, 48, stdin) == NULL)` (ar.c, Z. 51). Dort werden 48 Bytes in data.ptr über `stdin` gelesen. `data->ptr` ist ein doppelter Pointer, und somit ist `*data->ptr` wegen `*dp->ptr = dp->buf;` (ar.c, Z. 26) immer ein einfacher Pointer auf `data->buf`. Der Datenbereich, auf den `data->ptr`, wenn es vollständig dereferenziert wurde, im Struct zeigt, nur 28 Bytes lang, wodurch über die eigentlichen Grenzen `data->buf` um 20 Bytes hinausgeschrieben werden kann.
@@ -24,6 +26,7 @@ Um dieses Problem zu lösen, wird der doppelte Pointer bei `data->ptr` manipulie
 Der Payload lautet nach dem in Aufg. 1.1. aufgestellten Plan wie folgt:
 `p64(flag_addr) + (24 Bytes Dummy-Daten) + p64(location_of_pointer_data_ptr_itself-32)`. Die Dummy-Daten dürfen keinesfalls ein \0-Byte oder einen Zeilenumbruch enthalten, weil fgets() sonst vorzeitig aufhört, die Eingabe einzulesen.
 
+# 2 Bypassing Full ASLR
 
 ## 2.1 Finden Sie eine Möglichkeit ASLR zu umgehen. Identifizieren Sie dazu einen Information Leak Bug, mit dem es möglich ist, Adressen auszulesen. Erklären Sie den Bug und wie Sie ihn dazu nutzen können, um die Adressen der Gadgets zu berechnen.
 In der Methode `print_help` (getreal3.c, Z. 38 ff.) wird die Adresse, auf die der Pointer `help` zeigt, als Hexadezimalwert ausgegeben. Zeigt ``help` nicht auf einen der beiden Pointer, die im Array `help_message` liegen, erfolgt statt der Ausgabe des Hilfetextes die Adresse, worauf `help` zeigt. Die Methode `print_help` wird genau dann aufgerufen, wenn nach der Abfrage des gewünschten Befehls (getreal3.c, Z. 95 ff.) weder p noch q noch r eingetippt wurde. 
@@ -144,3 +147,13 @@ Um das Programm sauber zu beenden, müssen zuletzt noch die folgenden Werte in d
 * RAX = 60 (Nummer des Exit-Syscalls)
 * RDI = 0 (Exit-Code)
 Diese können über Gadgets 1 und 2 gesetzt werden.
+
+
+# 3 Bypassing Stack Canaries
+
+## 3.1 Erweitern Sie das Exploit-Template zu einem funktionierenden Angriff, der zu der Funktion shelly zurückspringt. Erklären Sie, wie Sie den Stack-Canary-Schutzmechanismus umgangen haben.
+Da kein C-Code vorlag, wurde zunächst die Binary mit Ghidra dekompiliert. Das Ergebnis nach Bereinigung der Ausgabe von Ghidra ist in der Datei `cookie_decompiled_with_ghidra.c` vermerkt. Die Buffer-Overflow-Schwachstelle des Programms ist, dass vom Benutzer bei der Abfrage der Kekssorte, 100 Zeichen in einen 64 Bytes großen Buffer gelesen werden. Sobald eine Eingabe getätigt wird, wird die Eingabe mit dem Format Specifier %s wieder ausgegeben. Die Schwachstelle hierbei ist, dass %s den Buffer solange liest, bis ein \0-Byte kommt, unabhängig von der ursprünglichen Größe des Buffers. So können auch Informationen, die im Stack adressenweise über dem Buffer stehen, geleakt werden, darunter der Stack Canary.
+
+Da der Stack Canary immer mit einem 00-Byte endet (Stack Canary % 256 = 0), wurde zunächst exakt so viele Zeichen eingegeben, um im Speicher den Stack Canary zu erreichen. Der Zeilenumbruch überschrieb das 00-Byte und so konnten die ersten Bytes des Stack Canary ausgegeben werden. Wurden nicht alle Bytes des Stack Canary ausgegeben, weil es ein 00-Byte in der Mitte hatte (z. B. 0xABCD00EFABCDEF00), wird erneut von der Position des letzten geleakten Byte weiter geleakt, bis alle 8 Bytes des Stack Canary geleakt sind. Diese Vorgehensweise funktioniert mehrfach, da nach der Eingabe des Leak-Payloads, durch anschließende Eingabe von y das Symbol `__stack_chk_fail` nicht erreicht wird, sondern zurück gesprungen wird und da die Methode nicht verlassen wurde, werden die lokalen Buffer nicht geleert. 
+
+Sind alle 8 Bytes des Stack Canary geleakt, wird der Payload aufgebaut. Nach dem Befüllen des Buffers kommt der gerade geleakte Stack Canary und danach die gewünschte Return-Adresse. Die Manipulation des Stacks wird von `__stack_chk_fail` nicht bemerkt, da der Stack Canary gleich geblieben ist und somit spawnt eine Shell.
