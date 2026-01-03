@@ -11,10 +11,7 @@ int main(int argc, char **argv, char **envp)
 
 void give_cookie()
 {
-    /* Setze den Stack Canary */
-    long in_FS_OFFSET; // Wird zur Laufzeit gesetzt
-    long current_stack_canary;
-    current_stack_canary = *(long *)(in_FS_OFFSET + 0x28);
+    /* An dieser Stelle wird der Stack Canary bestimmt */
 
     /* Locals */
     char command[8] = {0};        // local_60
@@ -25,19 +22,19 @@ void give_cookie()
         read(stdin, &wanted_cookie, 100);
         if (strcmp(wanted_cookie, "chocolate\n") == 0)
         {
-            puts("There you go a: \xf0\x9f\x8d\xaa\x00"); // \xf0\x9f\x8d\xaa = 🍪
+            puts("There you go a: \xf0\x9f\x8d\xaa"); // \xf0\x9f\x8d\xaa = 🍪
         }
         else if (strcmp(wanted_cookie, "pizza\n") == 0)
         {
-            puts("Technically not a cookie, but ok: \xf0\x9f\x8d\x95\x00"); // \xf0\x9f\x8d\x95 = 🍕
+            puts("Technically not a cookie, but ok: \xf0\x9f\x8d\x95"); // \xf0\x9f\x8d\x95 = 🍕
         }
         else if (strcmp(wanted_cookie, "fortune\n") == 0)
         {
-            puts("There you go a: \xf0\x9f\xa5\xa0\x00"); // \xf0\x9f\xa5\xa0 = 🥠
+            puts("There you go a: \xf0\x9f\xa5\xa0"); // \xf0\x9f\xa5\xa0 = 🥠
         }
         else if (strcmp(wanted_cookie, "rice\n") == 0)
         {
-            puts("Pretty boring...: \xf0\x9f\x8d\x98\x00"); // \xf0\x9f\x8d\x98 = 🍘
+            puts("Pretty boring...: \xf0\x9f\x8d\x98"); // \xf0\x9f\x8d\x98 = 🍘
         }
         else
         {
@@ -51,17 +48,13 @@ void give_cookie()
 
     puts("OK. Then enjoy your cookies! Bye.");
 
-    /* Stack-Canary-Check */
-    if (current_stack_canary != *(long *)(in_FS_OFFSET + 0x28))
-    {
-        __stack_chk_fail();
-    }
+    /* An dieser Stelle geschieht die Überprüfung des Stack Canary */
 }
 
 void shelly(void)
 {
-    puts("Ah, I see you know the \xf0\x9f\x90\xa6\x00");
-    puts("Please have a \xf0\x9f\x90\x9a\x00");
+    puts("Ah, I see you know the \xf0\x9f\x90\xa6\x00"); // \xf0\x9f\x90\xa6 = 🐦
+    puts("Please have a \xf0\x9f\x90\x9a\x00"); // \xf0\x9f\x90\x9a = 🐚
     fflush(stdout);
     execl("/bin/sh", "sh", NULL);
     return;
