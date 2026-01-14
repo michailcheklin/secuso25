@@ -69,4 +69,6 @@ In der Assembly sieht die Überprüfung wie folgt aus:
    0x000000000042db4c <+972>:	call   0x42c530 <__ubsan_handle_cfi_check_fail_abort>
    
 ```
-Durch die Nutzung der Eigenschaften, wie Structs und Pointer im Speicher liegen, wird nach dem Ausführen des indirect calls, aber vor dem Return geprüft, ob die Argumenttypen und -anzahl der Funktion noch korrekt sind.
+Durch die Nutzung der Eigenschaften, wie Structs und Pointer im Speicher liegen, wird nach dem Ausführen des indirect calls, aber vor dem Return geprüft, ob die Argumenttypen und -anzahl, sowie der Rückgabetyp der Funktion noch korrekt sind.
+
+## 1.3 In dem Programm befinden sich noch weitere Funktionspointer, die Sie überschreiben können. Analysieren sie die verfügbaren Funktionen und die Funktionspointer. Finden Sie einen Funktionspointer, den Sie überschreiben können, und eine Zielfunktion, welche die Datei flag.txt ausliest. Kopieren sie ihren bisherigen Exploit und modifizieren Sie exploit_cfi.py so, dass der Exploit wieder funktioniert.
