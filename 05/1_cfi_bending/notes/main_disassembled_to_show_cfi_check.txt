@@ -1,0 +1,244 @@
+   0x000000000042d780 <+0>:	push   rbp
+   0x000000000042d781 <+1>:	mov    rbp,rsp
+   0x000000000042d784 <+4>:	sub    rsp,0x80
+   0x000000000042d78b <+11>:	mov    rax,QWORD PTR [rip+0x15806]        # 0x442f98
+   0x000000000042d792 <+18>:	mov    rdi,QWORD PTR fs:[rax]
+   0x000000000042d796 <+22>:	mov    QWORD PTR [rbp-0x30],rdi
+   0x000000000042d79a <+26>:	mov    rcx,rdi
+   0x000000000042d79d <+29>:	add    rcx,0xffffffffffffff60
+   0x000000000042d7a4 <+36>:	mov    QWORD PTR fs:[rax],rcx
+   0x000000000042d7a8 <+40>:	mov    DWORD PTR [rbp-0x4],0x0
+   0x000000000042d7af <+47>:	add    rdi,0xffffffffffffffe0
+   0x000000000042d7b3 <+51>:	xor    esi,esi
+   0x000000000042d7b5 <+53>:	mov    edx,0x20
+   0x000000000042d7ba <+58>:	call   0x404050 <memset@plt>
+   0x000000000042d7bf <+63>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042d7c3 <+67>:	add    rdi,0xffffffffffffff60
+   0x000000000042d7ca <+74>:	xor    esi,esi
+   0x000000000042d7cc <+76>:	mov    edx,0x80
+   0x000000000042d7d1 <+81>:	call   0x404050 <memset@plt>
+   0x000000000042d7d6 <+86>:	movabs rdi,0x436b23
+   0x000000000042d7e0 <+96>:	mov    al,0x0
+   0x000000000042d7e2 <+98>:	call   0x404030 <printf@plt>
+   0x000000000042d7e7 <+103>:	mov    rdi,QWORD PTR ds:0x445b08
+   0x000000000042d7ef <+111>:	call   0x4043e0 <fflush@plt>
+   0x000000000042d7f4 <+116>:	movabs rdi,0x436b2a
+   0x000000000042d7fe <+126>:	call   0x404140 <system@plt>
+   0x000000000042d803 <+131>:	call   0x42d740 <print_usage>
+   0x000000000042d808 <+136>:	mov    edi,0x40
+   0x000000000042d80d <+141>:	mov    esi,0x1
+   0x000000000042d812 <+146>:	call   0x404300 <calloc@plt>
+   0x000000000042d817 <+151>:	mov    QWORD PTR ds:0xd86a20,rax
+   0x000000000042d81f <+159>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d827 <+167>:	movabs rcx,0x42dc68
+   0x000000000042d831 <+177>:	mov    QWORD PTR [rax+0x20],rcx
+   0x000000000042d835 <+181>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d83d <+189>:	movabs rcx,0x42dc50
+   0x000000000042d847 <+199>:	mov    QWORD PTR [rax+0x38],rcx
+   0x000000000042d84b <+203>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d853 <+211>:	movabs rcx,0x42dc40
+   0x000000000042d85d <+221>:	mov    QWORD PTR [rax+0x28],rcx
+   0x000000000042d861 <+225>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d869 <+233>:	movabs rcx,0x42dc60
+   0x000000000042d873 <+243>:	mov    QWORD PTR [rax+0x30],rcx
+   0x000000000042d877 <+247>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d87f <+255>:	mov    rcx,QWORD PTR [rax+0x30]
+   0x000000000042d883 <+259>:	mov    QWORD PTR [rbp-0x28],rcx
+   0x000000000042d887 <+263>:	mov    QWORD PTR [rbp-0x20],rcx
+   0x000000000042d88b <+267>:	movabs rax,0x42dc60
+   0x000000000042d895 <+277>:	sub    rcx,rax
+   0x000000000042d898 <+280>:	mov    rax,rcx
+   0x000000000042d89b <+283>:	shr    rax,0x3
+   0x000000000042d89f <+287>:	shl    rcx,0x3d
+   0x000000000042d8a3 <+291>:	or     rax,rcx
+   0x000000000042d8a6 <+294>:	cmp    rax,0x2
+   0x000000000042d8aa <+298>:	jbe    0x42d8bf <main+319>
+   0x000000000042d8ac <+300>:	mov    rsi,QWORD PTR [rbp-0x20]
+   0x000000000042d8b0 <+304>:	movabs rdi,0x445a40
+   0x000000000042d8ba <+314>:	call   0x42c530 <__ubsan_handle_cfi_check_fail_abort>
+   0x000000000042d8bf <+319>:	mov    rax,QWORD PTR [rbp-0x28]
+   0x000000000042d8c3 <+323>:	mov    rdi,QWORD PTR ds:0xd86a20
+   0x000000000042d8cb <+331>:	movabs rsi,0x436b3c
+   0x000000000042d8d5 <+341>:	call   rax
+   0x000000000042d8d7 <+343>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d8df <+351>:	movabs rcx,0x42dc70
+   0x000000000042d8e9 <+361>:	mov    QWORD PTR [rax+0x30],rcx
+   0x000000000042d8ed <+365>:	movabs rdi,0x436b46
+   0x000000000042d8f7 <+375>:	call   0x404100 <puts@plt>
+   0x000000000042d8fc <+380>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042d900 <+384>:	add    rdi,0xffffffffffffffe0
+   0x000000000042d904 <+388>:	mov    rdx,QWORD PTR ds:0x445b00
+   0x000000000042d90c <+396>:	mov    esi,0x1f
+   0x000000000042d911 <+401>:	call   0x4041a0 <fgets@plt>
+   0x000000000042d916 <+406>:	mov    rax,QWORD PTR [rbp-0x30]
+   0x000000000042d91a <+410>:	movsx  eax,BYTE PTR [rax-0x20]
+   0x000000000042d91e <+414>:	cmp    eax,0x0
+   0x000000000042d921 <+417>:	jne    0x42d925 <main+421>
+   0x000000000042d923 <+419>:	jmp    0x42d8ed <main+365>
+   0x000000000042d925 <+421>:	mov    rax,QWORD PTR [rbp-0x30]
+   0x000000000042d929 <+425>:	movsx  eax,BYTE PTR [rax-0x20]
+   0x000000000042d92d <+429>:	mov    DWORD PTR [rbp-0x34],eax
+   0x000000000042d930 <+432>:	sub    eax,0x61
+   0x000000000042d933 <+435>:	je     0x42da50 <main+720>
+   0x000000000042d939 <+441>:	jmp    0x42d93b <main+443>
+   0x000000000042d93b <+443>:	mov    eax,DWORD PTR [rbp-0x34]
+   0x000000000042d93e <+446>:	sub    eax,0x68
+   0x000000000042d941 <+449>:	je     0x42dc09 <main+1161>
+   0x000000000042d947 <+455>:	jmp    0x42d949 <main+457>
+   0x000000000042d949 <+457>:	mov    eax,DWORD PTR [rbp-0x34]
+   0x000000000042d94c <+460>:	sub    eax,0x6d
+   0x000000000042d94f <+463>:	je     0x42db64 <main+996>
+   0x000000000042d955 <+469>:	jmp    0x42d957 <main+471>
+   0x000000000042d957 <+471>:	mov    eax,DWORD PTR [rbp-0x34]
+   0x000000000042d95a <+474>:	sub    eax,0x70
+   0x000000000042d95d <+477>:	je     0x42db09 <main+905>
+   0x000000000042d963 <+483>:	jmp    0x42d965 <main+485>
+   0x000000000042d965 <+485>:	mov    eax,DWORD PTR [rbp-0x34]
+   0x000000000042d968 <+488>:	sub    eax,0x71
+   0x000000000042d96b <+491>:	je     0x42dbac <main+1068>
+   0x000000000042d971 <+497>:	jmp    0x42d973 <main+499>
+   0x000000000042d973 <+499>:	mov    eax,DWORD PTR [rbp-0x34]
+   0x000000000042d976 <+502>:	sub    eax,0x72
+   0x000000000042d979 <+505>:	jne    0x42dc0b <main+1163>
+   0x000000000042d97f <+511>:	jmp    0x42d981 <main+513>
+   0x000000000042d981 <+513>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d989 <+521>:	movabs rcx,0x42dc70
+   0x000000000042d993 <+531>:	mov    QWORD PTR [rax+0x30],rcx
+   0x000000000042d997 <+535>:	movabs rdi,0x436b56
+   0x000000000042d9a1 <+545>:	call   0x404100 <puts@plt>
+   0x000000000042d9a6 <+550>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042d9aa <+554>:	add    rdi,0xffffffffffffff60
+   0x000000000042d9b1 <+561>:	mov    rdx,QWORD PTR ds:0x445b00
+   0x000000000042d9b9 <+569>:	mov    esi,0x7f
+   0x000000000042d9be <+574>:	call   0x4041a0 <fgets@plt>
+   0x000000000042d9c3 <+579>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042d9c7 <+583>:	add    rdi,0xffffffffffffff60
+   0x000000000042d9ce <+590>:	mov    esi,0xa
+   0x000000000042d9d3 <+595>:	call   0x4042a0 <strchr@plt>
+   0x000000000042d9d8 <+600>:	mov    QWORD PTR [rbp-0x10],rax
+   0x000000000042d9dc <+604>:	cmp    QWORD PTR [rbp-0x10],0x0
+   0x000000000042d9e1 <+609>:	je     0x42d9ea <main+618>
+   0x000000000042d9e3 <+611>:	mov    rax,QWORD PTR [rbp-0x10]
+   0x000000000042d9e7 <+615>:	mov    BYTE PTR [rax],0x0
+   0x000000000042d9ea <+618>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042d9f2 <+626>:	mov    rcx,QWORD PTR [rax+0x30]
+   0x000000000042d9f6 <+630>:	mov    QWORD PTR [rbp-0x48],rcx
+   0x000000000042d9fa <+634>:	mov    QWORD PTR [rbp-0x40],rcx
+   0x000000000042d9fe <+638>:	movabs rax,0x42dc60
+   0x000000000042da08 <+648>:	sub    rcx,rax
+   0x000000000042da0b <+651>:	mov    rax,rcx
+   0x000000000042da0e <+654>:	shr    rax,0x3
+   0x000000000042da12 <+658>:	shl    rcx,0x3d
+   0x000000000042da16 <+662>:	or     rax,rcx
+   0x000000000042da19 <+665>:	cmp    rax,0x2
+   0x000000000042da1d <+669>:	jbe    0x42da32 <main+690>
+   0x000000000042da1f <+671>:	mov    rsi,QWORD PTR [rbp-0x40]
+   0x000000000042da23 <+675>:	movabs rdi,0x445a60
+   0x000000000042da2d <+685>:	call   0x42c530 <__ubsan_handle_cfi_check_fail_abort>
+   0x000000000042da32 <+690>:	mov    rax,QWORD PTR [rbp-0x48]
+   0x000000000042da36 <+694>:	mov    rsi,QWORD PTR [rbp-0x30]
+   0x000000000042da3a <+698>:	mov    rdi,QWORD PTR ds:0xd86a20
+   0x000000000042da42 <+706>:	add    rsi,0xffffffffffffff60
+   0x000000000042da49 <+713>:	call   rax
+   0x000000000042da4b <+715>:	jmp    0x42dc10 <main+1168>
+=> 0x000000000042da50 <+720>:	movabs rdi,0x436b56
+   0x000000000042da5a <+730>:	call   0x404100 <puts@plt>
+   0x000000000042da5f <+735>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042da63 <+739>:	add    rdi,0xffffffffffffff60
+   0x000000000042da6a <+746>:	mov    rdx,QWORD PTR ds:0x445b00
+   0x000000000042da72 <+754>:	mov    esi,0x7f
+   0x000000000042da77 <+759>:	call   0x4041a0 <fgets@plt>
+   0x000000000042da7c <+764>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042da80 <+768>:	add    rdi,0xffffffffffffff60
+   0x000000000042da87 <+775>:	mov    esi,0xa
+   0x000000000042da8c <+780>:	call   0x4042a0 <strchr@plt>
+   0x000000000042da91 <+785>:	mov    QWORD PTR [rbp-0x18],rax
+   0x000000000042da95 <+789>:	cmp    QWORD PTR [rbp-0x18],0x0
+   0x000000000042da9a <+794>:	je     0x42daa3 <main+803>
+   0x000000000042da9c <+796>:	mov    rax,QWORD PTR [rbp-0x18]
+   0x000000000042daa0 <+800>:	mov    BYTE PTR [rax],0x0
+   0x000000000042daa3 <+803>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042daab <+811>:	mov    rcx,QWORD PTR [rax+0x20]
+   0x000000000042daaf <+815>:	mov    QWORD PTR [rbp-0x58],rcx
+   0x000000000042dab3 <+819>:	mov    QWORD PTR [rbp-0x50],rcx
+   0x000000000042dab7 <+823>:	movabs rax,0x42dc60
+   0x000000000042dac1 <+833>:	sub    rcx,rax
+   0x000000000042dac4 <+836>:	mov    rax,rcx
+   0x000000000042dac7 <+839>:	shr    rax,0x3
+   0x000000000042dacb <+843>:	shl    rcx,0x3d
+   0x000000000042dacf <+847>:	or     rax,rcx
+   0x000000000042dad2 <+850>:	cmp    rax,0x2
+   0x000000000042dad6 <+854>:	jbe    0x42daeb <main+875>
+   0x000000000042dad8 <+856>:	mov    rsi,QWORD PTR [rbp-0x50]
+   0x000000000042dadc <+860>:	movabs rdi,0x445a80
+   0x000000000042dae6 <+870>:	call   0x42c530 <__ubsan_handle_cfi_check_fail_abort>
+   0x000000000042daeb <+875>:	mov    rax,QWORD PTR [rbp-0x58]
+   0x000000000042daef <+879>:	mov    rsi,QWORD PTR [rbp-0x30]
+   0x000000000042daf3 <+883>:	mov    rdi,QWORD PTR ds:0xd86a20
+   0x000000000042dafb <+891>:	add    rsi,0xffffffffffffff60
+   0x000000000042db02 <+898>:	call   rax
+   0x000000000042db04 <+900>:	jmp    0x42dc10 <main+1168>
+   0x000000000042db09 <+905>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042db11 <+913>:	mov    rcx,QWORD PTR [rax+0x28]
+   0x000000000042db15 <+917>:	mov    QWORD PTR [rbp-0x68],rcx
+   0x000000000042db19 <+921>:	mov    QWORD PTR [rbp-0x60],rcx
+   0x000000000042db1d <+925>:	movabs rax,0x42dc40
+   0x000000000042db27 <+935>:	sub    rcx,rax
+   0x000000000042db2a <+938>:	mov    rax,rcx
+   0x000000000042db2d <+941>:	shr    rax,0x3
+   0x000000000042db31 <+945>:	shl    rcx,0x3d
+   0x000000000042db35 <+949>:	or     rax,rcx
+   0x000000000042db38 <+952>:	cmp    rax,0x1
+   0x000000000042db3c <+956>:	jbe    0x42db51 <main+977>
+   0x000000000042db3e <+958>:	mov    rsi,QWORD PTR [rbp-0x60]
+   0x000000000042db42 <+962>:	movabs rdi,0x445aa0
+   0x000000000042db4c <+972>:	call   0x42c530 <__ubsan_handle_cfi_check_fail_abort>
+   0x000000000042db51 <+977>:	mov    rax,QWORD PTR [rbp-0x68]
+   0x000000000042db55 <+981>:	mov    rdi,QWORD PTR ds:0xd86a20
+   0x000000000042db5d <+989>:	call   rax
+   0x000000000042db5f <+991>:	jmp    0x42dc10 <main+1168>
+   0x000000000042db64 <+996>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042db6c <+1004>:	movabs rcx,0x42dc40
+   0x000000000042db76 <+1014>:	cmp    QWORD PTR [rax+0x28],rcx
+   0x000000000042db7a <+1018>:	jne    0x42db94 <main+1044>
+   0x000000000042db7c <+1020>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042db84 <+1028>:	movabs rcx,0x42dc48
+   0x000000000042db8e <+1038>:	mov    QWORD PTR [rax+0x28],rcx
+   0x000000000042db92 <+1042>:	jmp    0x42dbaa <main+1066>
+   0x000000000042db94 <+1044>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042db9c <+1052>:	movabs rcx,0x42dc40
+   0x000000000042dba6 <+1062>:	mov    QWORD PTR [rax+0x28],rcx
+   0x000000000042dbaa <+1066>:	jmp    0x42dc10 <main+1168>
+   0x000000000042dbac <+1068>:	mov    rax,QWORD PTR ds:0xd86a20
+   0x000000000042dbb4 <+1076>:	mov    rax,QWORD PTR [rax+0x38]
+   0x000000000042dbb8 <+1080>:	mov    QWORD PTR [rbp-0x78],rax
+   0x000000000042dbbc <+1084>:	mov    QWORD PTR [rbp-0x70],rax
+   0x000000000042dbc0 <+1088>:	movabs rcx,0x42dc50
+   0x000000000042dbca <+1098>:	cmp    rax,rcx
+   0x000000000042dbcd <+1101>:	je     0x42dbe2 <main+1122>
+   0x000000000042dbcf <+1103>:	mov    rsi,QWORD PTR [rbp-0x70]
+   0x000000000042dbd3 <+1107>:	movabs rdi,0x445ac0
+   0x000000000042dbdd <+1117>:	call   0x42c530 <__ubsan_handle_cfi_check_fail_abort>
+   0x000000000042dbe2 <+1122>:	mov    rax,QWORD PTR [rbp-0x78]
+   0x000000000042dbe6 <+1126>:	mov    rdi,QWORD PTR [rip+0x958e33]        # 0xd86a20 <str>
+   0x000000000042dbed <+1133>:	call   rax
+   0x000000000042dbef <+1135>:	mov    rcx,QWORD PTR [rbp-0x30]
+   0x000000000042dbf3 <+1139>:	mov    rax,QWORD PTR [rip+0x1539e]        # 0x442f98
+   0x000000000042dbfa <+1146>:	mov    QWORD PTR fs:[rax],rcx
+   0x000000000042dbfe <+1150>:	xor    eax,eax
+   0x000000000042dc00 <+1152>:	add    rsp,0x80
+   0x000000000042dc07 <+1159>:	pop    rbp
+   0x000000000042dc08 <+1160>:	ret    
+   0x000000000042dc09 <+1161>:	jmp    0x42dc0b <main+1163>
+   0x000000000042dc0b <+1163>:	call   0x42d740 <print_usage>
+   0x000000000042dc10 <+1168>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042dc14 <+1172>:	add    rdi,0xffffffffffffffe0
+   0x000000000042dc18 <+1176>:	xor    esi,esi
+   0x000000000042dc1a <+1178>:	mov    edx,0x20
+   0x000000000042dc1f <+1183>:	call   0x404050 <memset@plt>
+   0x000000000042dc24 <+1188>:	mov    rdi,QWORD PTR [rbp-0x30]
+   0x000000000042dc28 <+1192>:	add    rdi,0xffffffffffffff60
+   0x000000000042dc2f <+1199>:	xor    esi,esi
+   0x000000000042dc31 <+1201>:	mov    edx,0x80
+   0x000000000042dc36 <+1206>:	call   0x404050 <memset@plt>
+   0x000000000042dc3b <+1211>:	jmp    0x42d8ed <main+365>
