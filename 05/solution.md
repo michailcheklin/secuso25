@@ -2,40 +2,17 @@
 
 # 1. Bending Control-Flow Integrity
 
-## 1.1 Welchen Input müssen Sie schicken, um den Funktionspointer print im Objekt String zu überschreiben? Überschreiben Sie den Funktionspointer print mit dem Wert von system und bringen Sie das Programm dazu, diesen zu verwenden. Schreiben Sie das Kommando, also den ersten Parameter für system, in den Buffer des String Objektes. Erklären Sie, wieso system dann einen validen Parameter übergeben bekommt. Erweitern Sie das Exploit Template exploit_normal.py zu einem funktionierenden Exploit,der über system und die entsprechenden Kommandos die Datei flag.txt ausliest. Im String-Objekt befinden sich neben dem String von 32 Bytes auch folgende Pointer zu Funktionen (aufsteigend sortitert nach Adressen), die im Normalfall wie folgt zeigen: 
+## 1.1 Welchen Input müssen Sie schicken, um den Funktionspointer print im Objekt String zu überschreiben? Überschreiben Sie den Funktionspointer print mit dem Wert von system und bringen Sie das Programm dazu, diesen zu verwenden. Schreiben Sie das Kommando, also den ersten Parameter für system, in den Buffer des String Objektes. Erklären Sie, wieso system dann einen validen Parameter übergeben bekommt. Erweitern Sie das Exploit Template exploit_normal.py zu einem funktionierenden Exploit,der über system und die entsprechenden Kommandos die Datei flag.txt ausliest. 
 
-[table]
-[tr]
-    [th]Adresse[/th]
-    [th]Pointer[/th]
-    [th]Funktion, auf die der Pointer im Normalfall zeigt[/th]
-    [th]Zeile im Quellcode bend.c[/th]
-[/tr]
-[tr]
-    [td]str+32[/td]
-    [td]append[/td]
-    [td]string_append[/td]
-    [td]61[/td]
-[/tr]
-[tr]
-    [td]str+40[/td]
-    [td]print[/td]
-    [td]_print_to_stdout[/td]
-    [td]34[/td]
-[/tr]
-[tr]
-    [td]str+48[/td]
-    [td]set[/td]
-    [td]string_set[/td]
-    [td]63[/td]
-[/tr]
-[tr]
-    [td]str+56[/td]
-    [td]terminate[/td]
-    [td]exit_func[/td]
-    [td]55[/td]
-[/tr]
-[/table]
+Im String-Objekt befinden sich neben dem String von 32 Bytes auch folgende Pointer zu Funktionen (aufsteigend sortitert nach Adressen), die im Normalfall wie folgt zeigen: 
+
+| Adresse          | Pointer   | Funktion, auf die der Pointer im Normalfall zeigt | Zeile im Quellcode bend.c |
+|------------------|-----------|---------------------------------------------------|---------------------------|
+| str+32           | append    | string_append                                     | 61                        |
+| str+40           | print     | _print_to_stdout                                  | 34                        |
+| str+48           | set       | string_set                                         | 63                        |
+| str+56           | terminate | exit_func                                          | 55                        |
+
 
 Mit der Methode `string_set` (bend.c, Z. 63) können die 32 Bytes des str->buf Buffer selbst gesetzt werden. In der Methode `string_append` (bend.c, Z. 61) wird `strcat` aufgerufen, welche ohne die Prüfung der Grenzen von `str->buf` das erste Argument an das letzte Byte vor dem ersten \0-Byte nach dem Beginn von `str->buf` anfügt. So kann auch über `str->buf` hinaus geschrieben werden. Es ist zu beachten, dass `strcat` beim ersten \0-Byte des 2. Arguments aufhört, das 2. Argument einzulesen.
 
@@ -73,3 +50,29 @@ Durch die Nutzung der Eigenschaften, wie Structs und Pointer im Speicher liegen,
 
 ## 1.3 In dem Programm befinden sich noch weitere Funktionspointer, die Sie überschreiben können. Analysieren sie die verfügbaren Funktionen und die Funktionspointer. Finden Sie einen Funktionspointer, den Sie überschreiben können, und eine Zielfunktion, welche die Datei flag.txt ausliest. Kopieren sie ihren bisherigen Exploit und modifizieren Sie exploit_cfi.py so, dass der Exploit wieder funktioniert.
 Der Custom String Struct hat neben dem `print`-Funktionspointer noch den `append`-Funktionspointer. `append` erwartet eine Funktion, die als erstes Argument einen Pointer zu einer Instanz des Custom String Struct und als zweites Argument einen String (`char*`) nimmt und nichts zurückgibt (`void`). Außer `string_append` hat der Quellcode noch die Funktionen `string_set` und `_set_from_file`. Die Funktion `_set_from_file` liest einen String aus der welcome-Datei ein und wird normalerweise nur beim Initialisieren benutzt. Diese Funktion kann wie folgt genutzt werden, um stattdessen aus der `flag.txt`-Datei zu lesen: Zuerst wird nach Eingabe von r als gewünschte Aktion der Buffer so gefüllt, dass dieser mit einem String-Terminator (\0) endet. Hierzu sind 31 Zeichen nötig. Danach muss man nach Eingabe von a als gewünschte Aktion, ein Byte, das kein Zeilenumbruch und kein String-Terminator ist, gefolgt von der Adresse der `set_from_file`-Funktion eingegeben werden. Nur so kann die Konkatenation die Bytes so positionieren, dass die Umleitung des Funktions-Pointers danach korrekt ausgeführt werden. Anschließend wird, indem als gewünschte Aktion nochmal a eingegeben wird, der Aufruf der `set_from_file`-Funktion vorbereitet. Es wird `set_from_file` und nicht mehr `string_append` aufgerufen, da der Funktionspointer umgeleitet wurde. Diese Änderung wird von CFI nicht bemerkt, da die Funktionssignaturen weiterhin stimmen. Als Argument wird über die Konsole `./flag.txt` eingegeben. Dies führt dazu, dass der Inhalt aus der Datei `./flag.txt` in den normalen String-Buffer des Custom String Struct übertragen wird. Nun wird nur noch p als gewünschte Aktion eingegeben, um den Inhalt des String-Buffers des Custom String Struct, der vorher der Datei `./flag.txt` entnommen wurde, auf der Konsole auszugeben.
+
+# 2. Von Use-After-Free zu Arbitrary Read/Write
+
+# 2.1 Wo befindet sich die Schwachstelle in diesem Programm? Was ist das Problem? In welcher Reihenfolge müssen Sie welche Aktionen durchführen, damit ein dangling pointer von dem Programm verwendet wird? Wie könnte man die Schwachstelle einfach beheben?
+Im Programm wird free() innerhalb der Methode delete_user() (uadop.c, Z. 142) und innerhalb der Methode string_clear() (uadop.c, Z. 71) benutzt. Die Nutzung von free() markiert nur den entsprechenden Speicherbereich als "frei", damit dieser vom nächsten malloc() wieder verwendet werden kann. An der Speicheradresse, auf die der Pointer, worauf free() angewendet wurden bestehen die Daten weiterhin. Auch der Pointer selbst zeigt weiterhin auf den gleichen Bereich. 
+
+Bei den beiden Methoden selbst werden die Pointer, die auf die Datenbereiche zeigen, die mit free() als "frei" für das nächste malloc() markiert wurden, nicht durch Zuweisung von NULL deaktiviert. Die Methode string_clear() wird nur von der Methode delete_user() aufgerufen. Die Methode delete_user() wird von den folgenden Methoden aufgerufen: delete_user_at() und, sofern bei der Nutzung von edit_user() ein Fehler aufgetreten ist, auch von edit_user_at(). Von den beiden Methoden, die delete_user() aufrufen, deaktiviert nur delete_user_at() den Pointer zum gerade gelöschten Benutzer. Somit besteht innerhalb der Methode edit_user_at() eine Use-After-Free-Schwachstelle. 
+
+Um in edit_user_at() die Methode delete_user() ohne Deaktivierung des Pointers zum gelöschten Benutzer aufzurufen, muss bei edit_user() ein Fehler geschehen sein. Ein Fehler bei edit_user() geschieht, wenn versucht wird, als Geburtsjahr, -monat oder -tag einen Buchstaben zu nehmen. Dies muss bei einem bereits vorher erstellten Benutzer, der versucht wird zu bearbeiten, geschehen, da bei der Neuerstellung des Nutzers (im Code in der Methode new_user_at()) stattdessen die delete_user_at()-Methode, die den Pointer zum gelöschten Nutzer auch deaktiviert, verwendet wird.
+
+Um die Use-After-Free-Schwachstelle komplett zu beheben, muss man die an delete_user() und in clear_string() übergebenen Pointer noch innerhalb dieser Funktionen durch Zuweisung von NULL deaktivieren.
+
+# 2.2 Bei der Use-After-Free Schwachstelle verwendet das Programm ein Objekt U , welches allerdings schon freigegeben wurde. Wie können Sie ein anderes Objekt (z.B. einen String) an derselben Stelle wie U anlegen? Wie sieht ein Objekt vom Typ user_t im Speicher aus? Welche Aktionen mit welchem Input werden benötigt, um das freigegebene User Objekt U mit Angreifer kontrollierten Werten zu überschreiben?
+Der users-Array, über dem die Benutzer zentral verwaltet werden, besteht aus Pointern zu user_t-Objekten. Jedes user_t-Objekt ist wie folgt aufgebaut:
+
+| **Offset** | **Größe** | **Feld**        | **Typ**  | **Beschreibung**                            |
+|------------|-----------|-----------------|----------|---------------------------------------------|
+| 0          | 8         | id              | user_idt | Die Benutzer-ID, die ein 64 Bit Integer ist |
+| 8          | 8         | firstname->sz   | size_t   | Länge des Vornamens                         |
+| 16         | 8         | firstname->s    | char*    | Der Vorname selbst                          |
+| 24         | 8         | lastname->sz    | size_t   | Länge des Nachnamens                        |
+| 32         | 8         | lastname->s     | char*    | Der Nachname selbst                         |
+| 40         | 8         | birthday->year  | int32_t  | Geburtsjahr                                 |
+| 41         | 1         | birthday->month | uint8_t  | Monat                                       |
+| 42         | 1         | birthday->day   | uint8__t | Tag                                         |
+| 43         | 6         | ---             | ---      | (Heap Alignment Wiederhersteller)           |

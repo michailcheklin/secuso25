@@ -206,7 +206,7 @@ size_t read_index() {
 
 /**
  * Set up random admin password at a fixed address (0x100000).
- */
+ */ 
 void init_admin_password() {
   char buf[ADMIN_PASSWORD_LEN] = {0};
   FILE *f = fopen("/dev/urandom", "r");
