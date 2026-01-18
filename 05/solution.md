@@ -76,3 +76,206 @@ Der users-Array, über dem die Benutzer zentral verwaltet werden, besteht aus Po
 | 41         | 1         | birthday->month | uint8_t  | Monat                                       |
 | 42         | 1         | birthday->day   | uint8__t | Tag                                         |
 | 43         | 6         | ---             | ---      | (Heap Alignment Wiederhersteller)           |
+
+Insgesamt belegt ein user_t-Objekt 48 Bytes im Speicher, gefolgt von einem 16-Byte-Trenner im Heap. Werden die Benutzer direkt hintereinander angelegt, folgen die beiden Strings für den Vor- und Nachnamen direkt nach dem user_t-Objekt. Die Länge der beiden Strings wird auf das nächsthöhere Vielfache von 16 aufgerundet, um das Heap Alignment, welches in x64 erforderlich ist, zu reparieren. Die Trenner nach den Strings sind dazu da, zu erkennen, wann realloc() aufgerufen werden muss, falls sich die Länge des Strings ändert. 
+
+Angenommen, es werden 3 Nutzer, deren Vor- und Nachname jeweils exakt 48 Bytes lang sind, angelegt. Wenn dann bei allen 3 Benutzern in umgekehrter Reihenfolge bei der edit-Menüaktion der Tag des Geburtstags auf einen ungültigen Wert gesetzt wird, werden die Speicherbereiche aller Nutzerobjekte als "frei" markiert. 
+
+Es entsteht eine Use-After-Free-Schwachstelle bei allen 3 Benutzerobjekten, da die Pointer im users-Array nicht deaktiviert wurden. Nach dem free() ist das Heap-Layout wie folgt (\[F] am Anfang heißt, dass der Speicher mit free() freigegeben wurde)
+
+```
+[F] User A [0..15]
+[F] User A [16..31]
+[F] User A [32..47]
+(Trenner)
+[F] A.firstname [0..15]
+[F] A.firstname [16..31]
+[F] A.firstname [32..47]
+(Trenner)
+[F] A.lastname [0..15]
+[F] A.lastname [16..31]
+[F] A.lastname [32..47]
+(Trenner)
+[F] User B [0..15]
+[F] User B [16..31]
+[F] User B [32..47]
+(Trenner)
+[F] B.firstname [0..15]
+[F] B.firstname [16..31]
+[F] B.firstname [32..47]
+(Trenner)
+[F] B.lastname [0..15]
+[F] B.lastname [16..31]
+[F] B.lastname [32..47]
+(Trenner)
+[F] User C [0..15]
+[F] User C [16..31]
+[F] User C [32..47]
+(Trenner)
+[F] C.firstname [0..15]
+[F] C.firstname [16..31]
+[F] C.firstname [32..47]
+(Trenner)
+[F] C.lastname [0..15]
+[F] C.lastname [16..31]
+[F] C.lastname [32..47]
+(Trenner)
+```
+
+ 
+
+Mittels Heap Feng Shui wird ein vierter Benutzer D angelegt, wobei der Vorname 64 Bytes lang sein wird. Dies führt zu folgenden Effekten:
+
+* Da kein Speicherbereich, wo früher Vornamen waren, groß genug ist, wird der zu lange Vorname im Heap nach allen vorher erstellten Benutzern geschrieben. 
+* Da die Stelle, wo das user_t-Objekt des Benutzers A angelegt wurde, als "frei" markiert wurde, wird das user_t-Objekt des Benutzers D am Anfang des Heaps sein. 
+* Weil der frühere Benutzer A nicht vollständig verwendet werden konnte, landet der Nachname des neuen Benutzers D dort, wo früher das user_t-Objekt des Benutzers B war. 
+
+Somit hätten spätere Änderungen von D.lastname über den Menü-Befehl edit und Eingabe des entsprechenden Indexes von Benutzer D einen Einfluss darauf, was das user_t-Objekt des früheren Benutzers B ist 
+
+So entsteht folgendes Heap-Layout (Die Notation (Neue Daten) \[F] (Alte Daten) für diese und folgende Aufgaben bedeutet, dass der Speicher aktuell von (Neue Daten) verwendet wird, aber diese auch von (Alte Daten) referenziert werden):
+```
+User D [0..15] [F] User A [0..15]
+User D [16..31] [F] User A [16..31]
+User D [32..47] [F] User A [32..47]
+(Trenner)
+[F] A.firstname [0..15]
+[F] A.firstname [16..31]
+[F] A.firstname [32..47]
+(Trenner)
+[F] A.lastname [0..15]
+[F] A.lastname [16..31]
+[F] A.lastname [32..47]
+(Trenner)
+D.lastname [0..15] [F] User B [0..15]
+D.lastname [16..31] [F] User B [16..31]
+D.lastname [32..47] [F] User B [32..47]
+(Trenner)
+[F] B.firstname [0..15]
+[F] B.firstname [16..31]
+[F] B.firstname [32..47]
+(Trenner)
+[F] B.lastname [0..15]
+[F] B.lastname [16..31]
+[F] B.lastname [32..47]
+(Trenner)
+[F] User C [0..15]
+[F] User C [16..31]
+[F] User C [32..47]
+(Trenner)
+[F] C.firstname [0..15]
+[F] C.firstname [16..31]
+[F] C.firstname [32..47]
+(Trenner)
+[F] C.lastname [0..15]
+[F] C.lastname [16..31]
+[F] C.lastname [32..47]
+(Trenner)
+D.firstname [0..15]
+D.firstname [16..31]
+D.firstname [32..47]
+D.firstname [48..63]
+```
+
+# 2.3 Verwenden Sie die Use-After-Free Schwachstelle, um ein Arbitrary Read/Write zu erhalten. Wie können Sie die Schwachstelle nutzen, um das Admin Passwort auszulesen? Wie können Sie die Schwachstelle nutzen, um das Admin Menü zu aktivieren, also auf die Variable admin_enabled zu schreiben? Erweitern Sie das Exploit-Template zu einem funktionierenden Angriff.
+Um einen vollständigen Angriff durchzuführen, braucht man zwei Arbitrary Read/Write-Primitive: Eines, um den Flag admin_enabled zu aktivieren, damit bei Eingabe des Menübefehls a überhaupt eine Passwortabfrage kommt und eines, um das Admin-Passwort für die Passwortabfrage auszulesen und dann in der Passwortabfrage einzugeben.
+
+Mit den Aktionen, die in 2.2 zur Vorbereitung eines Arbitrary Read/Write-Primitivs durchgeführt wurden, entstand folgendes Heap-Layout:
+
+```
+User D [0..15] [F] User A [0..15]
+User D [16..31] [F] User A [16..31]
+User D [32..47] [F] User A [32..47]
+(Trenner)
+[F] A.firstname [0..15]
+[F] A.firstname [16..31]
+[F] A.firstname [32..47]
+(Trenner)
+[F] A.lastname [0..15]
+[F] A.lastname [16..31]
+[F] A.lastname [32..47]
+(Trenner)
+D.lastname [0..15] [F] User B [0..15]
+D.lastname [16..31] [F] User B [16..31]
+D.lastname [32..47] [F] User B [32..47]
+(Trenner)
+[F] B.firstname [0..15]
+[F] B.firstname [16..31]
+[F] B.firstname [32..47]
+(Trenner)
+[F] B.lastname [0..15]
+[F] B.lastname [16..31]
+[F] B.lastname [32..47]
+(Trenner)
+[F] User C [0..15]
+[F] User C [16..31]
+[F] User C [32..47]
+(Trenner)
+[F] C.firstname [0..15]
+[F] C.firstname [16..31]
+[F] C.firstname [32..47]
+(Trenner)
+[F] C.lastname [0..15]
+[F] C.lastname [16..31]
+[F] C.lastname [32..47]
+(Trenner)
+D.firstname [0..15]
+D.firstname [16..31]
+D.firstname [32..47]
+D.firstname [48..63]
+```
+
+Um ein zweites Arbitrary Read/Write-Primitiv zu erhalten, muss ein neuer Benutzer E erstellt werden, wobei Vor- und Nachname jeweils 48 Bytes lang sind. Dies hat folgende Effekte:
+
+* Da bei der Erstellung des Benutzers D nicht der ganze Speicherplatz des früheren Benutzers A verwendet wurde, wird ab dem früheren Vorname des Benutzers B nach als "frei" markierten Speicherplatz gesucht, um das user_t-Objekt, und die beiden Strings des Benutzers E abzulegen. 
+* Da genügend als frei markierter Speicher ab der Adresse, wo die Suche begonnen wurde, zur Verfügung steht, können alle Daten des Benutzers E hintereinander abgelegt werden.
+
+Somit sieht der Heap nun so aus:  
+
+```
+User D [0..15] [F] User A [0..15]
+User D [16..31] [F] User A [16..31]
+User D [32..47] [F] User A [32..47]
+(Trenner)
+[F] A.firstname [0..15]
+[F] A.firstname [16..31]
+[F] A.firstname [32..47]
+(Trenner)
+[F] A.lastname [0..15]
+[F] A.lastname [16..31]
+[F] A.lastname [32..47]
+(Trenner)
+D.lastname [0..15] [F] User B [0..15]
+D.lastname [16..31] [F] User B [16..31]
+D.lastname [32..47] [F] User B [32..47]
+(Trenner)
+User E [0..15] [F] B.firstname [0..15]
+User E [16..31] [F] B.firstname [16..31]
+User E [32..47] [F] B.firstname [32..47]
+(Trenner)
+E.firstname [0..15] [F] B.lastname [0..15]
+E.firstname [16..31] [F] B.lastname [16..31]
+E.firstname [32..47] [F] B.lastname [32..47]
+(Trenner)
+E.lastname [0..15] [F] User C [0..15]
+E.lastname [16..31] [F] User C [16..31]
+E.lastname [32..47] [F] User C [32..47]
+(Trenner)
+[F] C.firstname [0..15]
+[F] C.firstname [16..31]
+[F] C.firstname [32..47]
+(Trenner)
+[F] C.lastname [0..15]
+[F] C.lastname [16..31]
+[F] C.lastname [32..47]
+(Trenner)
+D.firstname [0..15]
+D.firstname [16..31]
+D.firstname [32..47]
+D.firstname [48..63]
+```
+
+Da die Referenz zu Benutzer B noch besteht, kann nun indem der Nachname von Benutzer D bearbeitet wird, das user_t-Objekt des Benutzers B manipuliert werden. Mit dem Wissen über den Aufbau des user_t-Objekts werden deren beide String-Pointer auf die Adresse des admin-enabled-Flags gesetzt. Würde man nur einen String-Pointer setzen, würde die edit-Operation zu einem Segfault führen, denn es werden beide String-Pointer dereferenziert. Die Strings werden auf den Wert "\x01" gesetzt, damit der admin-enabled-Flag zu true evaluiert wird. 
+
+Da die Referenz zu Benutzer C noch besteht, kann nun indem der Nachname von Benutzer E bearbeitet wird, das user_t-Objekt des Benutzers C manipuliert werden. Mit dem Wissen über den Aufbau des user_t-Objekts werden deren beide String-Pointer auf die Adresse des Admin-Passworts gesetzt. Würde man nur einen String-Pointer setzen, würde die print-Operation zu einem Segfault führen, denn es werden bei der print-Operation beide String-Pointer dereferenziert.
+
+Sobald der admin-enabled-Flag auf 1 gesetzt wurde und das Admin-Passwort geleakt wurde, wird das Admin-Menü aufgerufen.
